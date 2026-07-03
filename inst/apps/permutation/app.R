@@ -1,12 +1,9 @@
 ## PERMUTATION APP
 
-library(shiny)
-library(ggplot2)
-library(dplyr)
 
 ## Original cricket data from Johnson et al. 1999,
 ## showcased in Example 13.5 of ABD.
-cricket_data <- tibble(
+cricket_data <- tibble::tibble(
   original_group = c(
     rep("Starved", 11),
     rep("Fed", 13)
@@ -17,20 +14,20 @@ cricket_data <- tibble(
     79.5, 88.9
   )
 ) |>
-  mutate(
+  dplyr::mutate(
     observation_id = row_number()
   )
 
 ## Fixed observed difference from the real study.
 observed_starved_mean <- cricket_data |>
-  filter(original_group == "Starved") |>
-  summarise(mean_time = mean(time_hours)) |>
-  pull(mean_time)
+  dplyr::filter(original_group == "Starved") |>
+  dplyr::summarize(mean_time = mean(time_hours)) |>
+  dplyr::pull(mean_time)
 
 observed_fed_mean <- cricket_data |>
-  filter(original_group == "Fed") |>
-  summarise(mean_time = mean(time_hours)) |>
-  pull(mean_time)
+  dplyr::filter(original_group == "Fed") |>
+  dplyr::summarize(mean_time = mean(time_hours)) |>
+  dplyr::pull(mean_time)
 
 observed_difference <- observed_starved_mean - observed_fed_mean
 
@@ -46,19 +43,19 @@ permute_once <- function(data) {
   )
 
   permuted_data <- data |>
-    mutate(
+    dplyr::mutate(
       randomized_group = randomized_labels
     )
 
   randomized_starved_mean <- permuted_data |>
-    filter(randomized_group == "Starved") |>
-    summarise(mean_time = mean(time_hours)) |>
-    pull(mean_time)
+    dplyr::filter(randomized_group == "Starved") |>
+    dplyr::summarize(mean_time = mean(time_hours)) |>
+    dplyr::pull(mean_time)
 
   randomized_fed_mean <- permuted_data |>
-    filter(randomized_group == "Fed") |>
-    summarise(mean_time = mean(time_hours)) |>
-    pull(mean_time)
+    dplyr::filter(randomized_group == "Fed") |>
+    dplyr::summarize(mean_time = mean(time_hours)) |>
+    dplyr::pull(mean_time)
 
   permuted_difference <- randomized_starved_mean - randomized_fed_mean
 
@@ -72,17 +69,17 @@ permute_once <- function(data) {
 
 make_slide_table <- function(data, group_name) {
   data |>
-    filter(randomized_group == group_name) |>
-    arrange(time_hours) |>
-    mutate(
+    dplyr::filter(randomized_group == group_name) |>
+    dplyr::arrange(time_hours) |>
+    dplyr::mutate(
       row_class = if_else(original_group == "Fed", "original-fed", "original-starved")
     )
 }
 
-ui <- fluidPage(
+ui <- shiny::fluidPage(
 
-  tags$head(
-    tags$style(HTML("
+  shiny::tags$head(
+    shiny::tags$style(shiny::HTML("
       body {
         font-size: 16px;
         color: #222222;
@@ -384,18 +381,18 @@ ui <- fluidPage(
     "))
   ),
 
-  titlePanel(
-    div(
+  shiny::titlePanel(
+    shiny::div(
       class = "app-title",
       "Permutation tests: building a null distribution"
     )
   ),
 
-  div(
+  shiny::div(
     class = "explanation-box",
-    tags$div(
+    shiny::tags$div(
       class = "equation-large",
-      HTML(
+      shiny::HTML(
         paste0(
           "Observed: Ȳ<sub>starved</sub> − Ȳ<sub>fed</sub> = ",
           round(observed_starved_mean, 2),
@@ -409,76 +406,76 @@ ui <- fluidPage(
     )
   ),
 
-  sidebarLayout(
+  shiny::sidebarLayout(
 
-    sidebarPanel(
+    shiny::sidebarPanel(
       width = 2,
 
-      div(
+      shiny::div(
         class = "control-box",
-        h4("Build the null distribution"),
+        shiny::h4("Build the null distribution"),
 
-        actionButton("permute_once", "Permute once", width = "100%"),
-        br(), br(),
+        shiny::actionButton("permute_once", "Permute once", width = "100%"),
+        shiny::br(), shiny::br(),
 
-        actionButton("permute_10", "Run 10 more", width = "100%"),
-        br(), br(),
+        shiny::actionButton("permute_10", "Run 10 more", width = "100%"),
+        shiny::br(), shiny::br(),
 
 
-        actionButton("permute_1000", "Run 1000 more", width = "100%"),
-        br(), br(),
+        shiny::actionButton("permute_1000", "Run 1000 more", width = "100%"),
+        shiny::br(), shiny::br(),
 
-        actionButton("reset", "Reset", width = "100%")
+        shiny::actionButton("reset", "Reset", width = "100%")
       ),
 
-      div(
+      shiny::div(
         class = "control-box current-progress-text",
-        h4(class = "current-progress-heading", "Current progress"),
-        textOutput("n_permutations"),
-        textOutput("n_lower_tail"),
-        uiOutput("p_value_summary")
+        shiny::h4(class = "current-progress-heading", "Current progress"),
+        shiny::textOutput("n_permutations"),
+        shiny::textOutput("n_lower_tail"),
+        shiny::uiOutput("p_value_summary")
       )
     ),
 
-    mainPanel(
+    shiny::mainPanel(
       width = 10,
 
-      tabsetPanel(
+      shiny::tabsetPanel(
 
-        tabPanel(
+        shiny::tabPanel(
           "Explanation",
-          br(),
-          div(
+          shiny::br(),
+          shiny::div(
             class = "explanation-tab",
-            h3("How to use this app"),
-            p("This app uses the sagebrush cricket data from Johnson et al. 1999, showcased in Example 13.5 of ABD. The 'Original data' tab reproduces Table 13.8-1 for reference."),
-            p("The 'Permutatation' tab allows you to perform and visualize permutations. Each permutation randomly reassigns the observed times into two groups with the same sample sizes as the original study: 11 starved and 13 fed."),
-            p("The app shows one randomized outcome at a time while also building a histogram of the mean differences from all permutations generated so far. The treatment names are retained, but the observed times have been randomly reassigned. Pale orange undershading identifies values that originally came from the fed group."),
-            p("The histogram is built from all permutations generated so far. The goal is to understand what kinds of mean differences are plausible under the null hypothesis. The red bars show permuted mean differences that are less than or equal to the observed study difference of -18.26 hours.")
+            shiny::h3("How to use this app"),
+            shiny::p("This app uses the sagebrush cricket data from Johnson et al. 1999, showcased in Example 13.5 of ABD. The 'Original data' tab reproduces Table 13.8-1 for reference."),
+            shiny::p("The 'Permutatation' tab allows you to perform and visualize permutations. Each permutation randomly reassigns the observed times into two groups with the same sample sizes as the original study: 11 starved and 13 fed."),
+            shiny::p("The app shows one randomized outcome at a time while also building a histogram of the mean differences from all permutations generated so far. The treatment names are retained, but the observed times have been randomly reassigned. Pale orange undershading identifies values that originally came from the fed group."),
+            shiny::p("The histogram is built from all permutations generated so far. The goal is to understand what kinds of mean differences are plausible under the null hypothesis. The red bars show permuted mean differences that are less than or equal to the observed study difference of -18.26 hours.")
           )
         ),
 
-        tabPanel(
+        shiny::tabPanel(
           "Original data",
-          br(),
-          div(
+          shiny::br(),
+          shiny::div(
             class = "original-slide-layout",
 
-            div(
+            shiny::div(
               class = "original-slide-left",
 
-              div(
+              shiny::div(
                 class = "lecture-table-title",
-                HTML(
+                shiny::HTML(
                   "Times to mating (in hours) of female sagebrush crickets that were recently starved or fed. Data from the two treatments are color-coded to more easily identify the origin of each value later in the <span class='lecture-link'>Permutation</span> tab."
                 )
               ),
 
-              uiOutput("original_slide_table_only"),
+              shiny::uiOutput("original_slide_table_only"),
 
-              div(
+              shiny::div(
                 class = "lecture-equation",
-                HTML(
+                shiny::HTML(
                   paste0(
                     "Ȳ<sub>1</sub> − Ȳ<sub>2</sub> = ",
                     round(observed_starved_mean, 2),
@@ -491,51 +488,51 @@ ui <- fluidPage(
               )
             ),
 
-            div(
+            shiny::div(
               class = "original-slide-right",
-              plotOutput("original_histograms", height = "540px")
+              shiny::plotOutput("original_histograms", height = "540px")
             )
           )
         ),
 
-        tabPanel(
+        shiny::tabPanel(
           "Permutation",
-          br(),
-          div(
+          shiny::br(),
+          shiny::div(
             class = "permutation-layout",
 
-            div(
+            shiny::div(
               class = "permutation-left",
 
-              div(class = "permutation-subtitle", "Most recent permutation"),
+              shiny::div(class = "permutation-subtitle", "Most recent permutation"),
 
-              p(
+              shiny::p(
                 class = "permutation-note",
-                HTML(
+                shiny::HTML(
                   "If more than one permutation is performed using the buttons to the left, <strong>only the most recent permutation is shown</strong>."
                 )
               ),
 
-              uiOutput("current_permutation_slide_table"),
+              shiny::uiOutput("current_permutation_slide_table"),
 
-              uiOutput("current_permutation_equation")
+              shiny::uiOutput("current_permutation_equation")
             ),
 
-            div(
+            shiny::div(
               class = "permutation-right",
 
-              div(class = "permutation-subtitle", "The Null distribution"),
+              shiny::div(class = "permutation-subtitle", "The Null distribution"),
 
-              div(
+              shiny::div(
                 class = "permutation-histogram-text",
-                HTML(
+                shiny::HTML(
                   "Each permutation contributes one value of Ȳ<sub>1</sub> − Ȳ<sub>2</sub> to this histogram."
                 )
               ),
 
-              plotOutput("null_histogram", height = "420px"),
+              shiny::plotOutput("null_histogram", height = "420px"),
 
-              uiOutput("histogram_explanation")
+              shiny::uiOutput("histogram_explanation")
             )
           )
         )
@@ -543,32 +540,46 @@ ui <- fluidPage(
     )
   ),
 
-  div(
+  shiny::div(
     class = "footer-note",
-    "Developed by Vikram Baliga at the University of British Columbia, using resources associated with the Analysis of Biological Data by Whitlock & Schluter."
+    "Developed by ",
+    shiny::tags$a(
+      href = "https://vbaliga.github.io/",
+      target = "_blank",
+      rel = "noopener noreferrer",
+      "Vikram Baliga"
+    ),
+    " at the University of British Columbia, using resources associated with ",
+    shiny::tags$a(
+      href = "https://whitlockschluter3e.zoology.ubc.ca/index.html",
+      target = "_blank",
+      rel = "noopener noreferrer",
+      "The Analysis of Biological Data"
+    ),
+    " by Whitlock & Schluter."
   )
 )
 
 server <- function(input, output, session) {
 
-  permutation_history <- reactiveVal(tibble(permutation_id = integer(),
+  permutation_history <- shiny::reactiveVal(tibble::tibble(permutation_id = integer(),
                                             permuted_difference = numeric()))
 
-  current_permutation <- reactiveVal(NULL)
+  current_permutation <- shiny::reactiveVal(NULL)
 
-  current_permutation_summary <- reactiveVal(NULL)
+  current_permutation_summary <- shiny::reactiveVal(NULL)
 
   add_permutations <- function(n) {
     old_history <- permutation_history()
     old_n <- nrow(old_history)
 
-    new_results <- map(seq_len(n), function(i) {
+    new_results <- purrr::map(seq_len(n), function(i) {
       result <- permute_once(cricket_data)
 
       if (i == n) {
         current_permutation(result$permuted_data)
         current_permutation_summary(
-          tibble(
+          tibble::tibble(
             randomized_starved_mean = result$randomized_starved_mean,
             randomized_fed_mean = result$randomized_fed_mean,
             permuted_difference = result$permuted_difference
@@ -576,61 +587,61 @@ server <- function(input, output, session) {
         )
       }
 
-      tibble(
+      tibble::tibble(
         permutation_id = old_n + i,
         permuted_difference = result$permuted_difference
       )
     }) |>
-      bind_rows()
+      dplyr::bind_rows()
 
-    permutation_history(bind_rows(old_history, new_results))
+    permutation_history(dplyr::bind_rows(old_history, new_results))
   }
 
-  observeEvent(input$permute_once, {
+  shiny::observeEvent(input$permute_once, {
     add_permutations(1)
   })
 
-  observeEvent(input$permute_10, {
+  shiny::observeEvent(input$permute_10, {
     add_permutations(10)
   })
 
-  observeEvent(input$permute_100, {
+  shiny::observeEvent(input$permute_100, {
     add_permutations(100)
   })
 
-  observeEvent(input$permute_1000, {
+  shiny::observeEvent(input$permute_1000, {
     add_permutations(1000)
   })
 
-  observeEvent(input$reset, {
-    permutation_history(tibble(permutation_id = integer(),
+  shiny::observeEvent(input$reset, {
+    permutation_history(tibble::tibble(permutation_id = integer(),
                                permuted_difference = numeric()))
     current_permutation(NULL)
     current_permutation_summary(NULL)
   })
 
-  output$original_slide_table_only <- renderUI({
+  output$original_slide_table_only <- shiny::renderUI({
     starved_data <- cricket_data |>
-      filter(original_group == "Starved") |>
-      arrange(time_hours)
+      dplyr::filter(original_group == "Starved") |>
+      dplyr::arrange(time_hours)
 
     fed_data <- cricket_data |>
-      filter(original_group == "Fed") |>
-      arrange(time_hours)
+      dplyr::filter(original_group == "Fed") |>
+      dplyr::arrange(time_hours)
 
     starved_rows <- lapply(seq_len(nrow(starved_data)), function(i) {
-      tags$tr(
+      shiny::tags$tr(
         class = "original-starved",
-        tags$td("Starved"),
-        tags$td(starved_data$time_hours[i])
+        shiny::tags$td("Starved"),
+        shiny::tags$td(starved_data$time_hours[i])
       )
     })
 
     fed_rows <- lapply(seq_len(nrow(fed_data)), function(i) {
-      tags$tr(
+      shiny::tags$tr(
         class = "original-fed",
-        tags$td("Fed"),
-        tags$td(fed_data$time_hours[i])
+        shiny::tags$td("Fed"),
+        shiny::tags$td(fed_data$time_hours[i])
       )
     })
 
@@ -639,54 +650,54 @@ server <- function(input, output, session) {
     starved_rows <- c(
       starved_rows,
       list(
-        tags$tr(class = "blank-row", tags$td(""), tags$td("")),
-        tags$tr(class = "blank-row", tags$td(""), tags$td(""))
+        shiny::tags$tr(class = "blank-row", shiny::tags$td(""), shiny::tags$td("")),
+        shiny::tags$tr(class = "blank-row", shiny::tags$td(""), shiny::tags$td(""))
       )
     )
 
-    div(
+    shiny::div(
       class = "original-slide-tables",
 
-      tags$table(
+      shiny::tags$table(
         class = "original-lecture-table",
-        tags$thead(
-          tags$tr(
-            tags$th("Treatment"),
-            tags$th("Time (hours)")
+        shiny::tags$thead(
+          shiny::tags$tr(
+            shiny::tags$th("Treatment"),
+            shiny::tags$th("Time (hours)")
           )
         ),
-        tags$tbody(starved_rows),
-        tags$tfoot(
-          tags$tr(
-            tags$td("Mean"),
-            tags$td(round(observed_starved_mean, 2))
+        shiny::tags$tbody(starved_rows),
+        shiny::tags$tfoot(
+          shiny::tags$tr(
+            shiny::tags$td("Mean"),
+            shiny::tags$td(round(observed_starved_mean, 2))
           )
         )
       ),
 
-      tags$table(
+      shiny::tags$table(
         class = "original-lecture-table",
-        tags$thead(
-          tags$tr(
-            tags$th("Treatment"),
-            tags$th("Time (hours)")
+        shiny::tags$thead(
+          shiny::tags$tr(
+            shiny::tags$th("Treatment"),
+            shiny::tags$th("Time (hours)")
           )
         ),
-        tags$tbody(fed_rows),
-        tags$tfoot(
-          tags$tr(
-            tags$td("Mean"),
-            tags$td(round(observed_fed_mean, 2))
+        shiny::tags$tbody(fed_rows),
+        shiny::tags$tfoot(
+          shiny::tags$tr(
+            shiny::tags$td("Mean"),
+            shiny::tags$td(round(observed_fed_mean, 2))
           )
         )
       )
     )
   })
 
-  output$original_histograms <- renderPlot({
+  output$original_histograms <- shiny::renderPlot({
     cricket_data |>
-      ggplot(aes(x = time_hours)) +
-      geom_histogram(
+      ggplot2::ggplot(ggplot2::aes(x = time_hours)) +
+      ggplot2::geom_histogram(
         binwidth = 20,
         boundary = 0,
         closed = "left",
@@ -694,7 +705,7 @@ server <- function(input, output, session) {
         color = "#222222",
         linewidth = 0.7
       ) +
-      facet_wrap(
+      ggplot2::facet_wrap(
         vars(original_group),
         ncol = 1,
         scales = "free_y",
@@ -703,42 +714,42 @@ server <- function(input, output, session) {
           "Fed" = "Fed females"
         ))
       ) +
-      scale_x_continuous(
+      ggplot2::scale_x_continuous(
         limits = c(0, 100),
         breaks = seq(0, 100, 20),
         expand = c(0, 0)
       ) +
-      scale_y_continuous(
+      ggplot2::scale_y_continuous(
         breaks = seq(0, 8, 2),
         expand = expansion(mult = c(0, 0.12))
       ) +
-      labs(
+      ggplot2::labs(
         x = "Time to mating (hours)",
         y = "Frequency"
       ) +
-      theme_classic(base_size = 18) +
-      theme(
-        strip.background = element_blank(),
-        strip.text = element_text(
+      ggplot2::theme_classic(base_size = 18) +
+      ggplot2::theme(
+        strip.background = ggplot2::element_blank(),
+        strip.text = ggplot2::element_text(
           face = "italic",
           size = 19,
           hjust = 0.86,
           color = "#222222"
         ),
-        axis.title = element_text(face = "bold", size = 19),
-        axis.title.y = element_text(margin = margin(r = 12)),
-        axis.title.x = element_text(margin = margin(t = 12)),
-        axis.text = element_text(color = "#222222", size = 16),
-        axis.line = element_line(color = "#222222", linewidth = 0.7),
-        axis.ticks = element_line(color = "#222222", linewidth = 0.7),
-        panel.spacing = unit(1.7, "lines"),
-        plot.margin = margin(4, 18, 4, 4)
+        axis.title = ggplot2::element_text(face = "bold", size = 19),
+        axis.title.y = ggplot2::element_text(margin = margin(r = 12)),
+        axis.title.x = ggplot2::element_text(margin = margin(t = 12)),
+        axis.text = ggplot2::element_text(color = "#222222", size = 16),
+        axis.line = ggplot2::element_line(color = "#222222", linewidth = 0.7),
+        axis.ticks = ggplot2::element_line(color = "#222222", linewidth = 0.7),
+        panel.spacing = ggplot2::unit(1.7, "lines"),
+        plot.margin = ggplot2::margin(4, 18, 4, 4)
       )
   })
 
-  output$current_permutation_slide_table <- renderUI({
-    validate(
-      need(!is.null(current_permutation()), "Click 'Permute once' or run a batch of permutations to display one randomized outcome.")
+  output$current_permutation_slide_table <- shiny::renderUI({
+    shiny::validate(
+      shiny::need(!is.null(current_permutation()), "Click 'Permute once' or run a batch of permutations to display one randomized outcome.")
     )
 
     permutation_data <- current_permutation()
@@ -749,61 +760,61 @@ server <- function(input, output, session) {
     starved_mean <- mean(starved_data$time_hours)
     fed_mean <- mean(fed_data$time_hours)
 
-    tagList(
-      div(
+    shiny::tagList(
+      shiny::div(
         class = "slide-table-wrapper",
 
-        div(
+        shiny::div(
           class = "slide-table-block",
-          tags$table(
+          shiny::tags$table(
             class = "slide-table",
-            tags$thead(
-              tags$tr(
-                tags$th("Treatment"),
-                tags$th("Time (hrs)")
+            shiny::tags$thead(
+              shiny::tags$tr(
+                shiny::tags$th("Treatment"),
+                shiny::tags$th("Time (hrs)")
               )
             ),
-            tags$tbody(
+            shiny::tags$tbody(
               lapply(seq_len(nrow(starved_data)), function(i) {
-                tags$tr(
+                shiny::tags$tr(
                   class = starved_data$row_class[i],
-                  tags$td("Starved"),
-                  tags$td(starved_data$time_hours[i])
+                  shiny::tags$td("Starved"),
+                  shiny::tags$td(starved_data$time_hours[i])
                 )
               })
             ),
-            tags$tfoot(
-              tags$tr(
-                tags$td("Mean"),
-                tags$td(round(starved_mean, 2))
+            shiny::tags$tfoot(
+              shiny::tags$tr(
+                shiny::tags$td("Mean"),
+                shiny::tags$td(round(starved_mean, 2))
               )
             )
           )
         ),
 
-        div(
+        shiny::div(
           class = "slide-table-block",
-          tags$table(
+          shiny::tags$table(
             class = "slide-table",
-            tags$thead(
-              tags$tr(
-                tags$th("Treatment"),
-                tags$th("Time (hrs)")
+            shiny::tags$thead(
+              shiny::tags$tr(
+                shiny::tags$th("Treatment"),
+                shiny::tags$th("Time (hrs)")
               )
             ),
-            tags$tbody(
+            shiny::tags$tbody(
               lapply(seq_len(nrow(fed_data)), function(i) {
-                tags$tr(
+                shiny::tags$tr(
                   class = fed_data$row_class[i],
-                  tags$td("Fed"),
-                  tags$td(fed_data$time_hours[i])
+                  shiny::tags$td("Fed"),
+                  shiny::tags$td(fed_data$time_hours[i])
                 )
               })
             ),
-            tags$tfoot(
-              tags$tr(
-                tags$td("Mean"),
-                tags$td(round(fed_mean, 2))
+            shiny::tags$tfoot(
+              shiny::tags$tr(
+                shiny::tags$td("Mean"),
+                shiny::tags$td(round(fed_mean, 2))
               )
             )
           )
@@ -812,16 +823,16 @@ server <- function(input, output, session) {
     )
   })
 
-  output$current_permutation_equation <- renderUI({
-    validate(
-      need(!is.null(current_permutation_summary()), "")
+  output$current_permutation_equation <- shiny::renderUI({
+    shiny::validate(
+      shiny::need(!is.null(current_permutation_summary()), "")
     )
 
     summary <- current_permutation_summary()
 
-    div(
+    shiny::div(
       class = "equation-large",
-      HTML(
+      shiny::HTML(
         paste0(
           "Ȳ<sub>1</sub> − Ȳ<sub>2</sub> = ",
           round(summary$randomized_starved_mean, 2),
@@ -834,39 +845,39 @@ server <- function(input, output, session) {
     )
   })
 
-  output$null_histogram <- renderPlot({
+  output$null_histogram <- shiny::renderPlot({
     history <- permutation_history()
 
-    validate(
-      need(nrow(history) > 0, "Click 'Permute once' or run a batch of permutations to begin building the null distribution.")
+    shiny::validate(
+      shiny::need(nrow(history) > 0, "Click 'Permute once' or run a batch of permutations to begin building the null distribution.")
     )
 
     history <- history |>
-      mutate(
+      dplyr::mutate(
         lower_tail = permuted_difference <= observed_difference
       )
 
-    ggplot(history, aes(x = permuted_difference)) +
-      geom_histogram(
-        data = filter(history, !lower_tail),
+    ggplot2::ggplot(history, aes(x = permuted_difference)) +
+      ggplot2::geom_histogram(
+        data = dplyr::filter(history, !lower_tail),
         binwidth = 2,
         boundary = 0,
         fill = "white",
         color = "black"
       ) +
-      geom_histogram(
-        data = filter(history, lower_tail),
+      ggplot2::geom_histogram(
+        data = dplyr::filter(history, lower_tail),
         binwidth = 2,
         boundary = 0,
         fill = "#c92514",
         color = "black"
       ) +
-      geom_vline(
+      ggplot2::geom_vline(
         xintercept = observed_difference,
         linewidth = 1.1,
         color = "#555555"
       ) +
-      annotate(
+      ggplot2::annotate(
         "text",
         x = observed_difference,
         y = Inf,
@@ -876,37 +887,37 @@ server <- function(input, output, session) {
         size = 5,
         color = "#222222"
       ) +
-      scale_x_continuous(
+      ggplot2::scale_x_continuous(
         limits = c(-50, 50),
         breaks = seq(-40, 40, 20),
         expand = c(0, 0)
       ) +
-      scale_y_continuous(
-        expand = expansion(mult = c(0, 0.1))
+      ggplot2::scale_y_continuous(
+        expand = ggplot2::expansion(mult = c(0, 0.1))
       ) +
-      labs(
+      ggplot2::labs(
         x = "Difference in treatment means\nfrom randomized data (hours)",
         y = "Frequency"
       ) +
-      theme_classic(base_size = 20) +
-      theme(
-        axis.title = element_text(face = "bold"),
+      ggplot2::theme_classic(base_size = 20) +
+      ggplot2::theme(
+        axis.title = ggplot2::element_text(face = "bold"),
         # axis.title.x = element_text(
         #   size = 20,
         #   lineheight = 1.0,
         #   margin = margin(t = 10)
         # ),
-        axis.text = element_text(color = "black"),
-        plot.margin = margin(4, 6, 12, 6)
+        axis.text = ggplot2::element_text(color = "black"),
+        plot.margin = ggplot2::margin(4, 6, 12, 6)
       )
   })
 
-  output$n_permutations <- renderText({
+  output$n_permutations <- shiny::renderText({
     n <- nrow(permutation_history())
     paste0("Number of permutations generated: ", n)
   })
 
-  output$n_lower_tail <- renderText({
+  output$n_lower_tail <- shiny::renderText({
     history <- permutation_history()
 
     if (nrow(history) == 0) {
@@ -921,19 +932,19 @@ server <- function(input, output, session) {
     )
   })
 
-  output$p_value_summary <- renderUI({
+  output$p_value_summary <- shiny::renderUI({
     history <- permutation_history()
 
     if (nrow(history) == 0) {
-      return(tags$p("Two-tailed P-value: not yet available"))
+      return(shiny::tags$p("Two-tailed P-value: not yet available"))
     }
 
     lower_tail_count <- sum(history$permuted_difference <= observed_difference)
     lower_tail_proportion <- lower_tail_count / nrow(history)
     two_tailed_p <- 2 * lower_tail_proportion
 
-    tags$div(
-      tags$p(
+    shiny::tags$div(
+      shiny::tags$p(
         paste0(
           "Lower-tail proportion = ",
           lower_tail_count,
@@ -943,7 +954,7 @@ server <- function(input, output, session) {
           round(lower_tail_proportion, 4)
         )
       ),
-      tags$p(
+      shiny::tags$p(
         paste0(
           "Two-tailed P-value = 2 × ",
           round(lower_tail_proportion, 4),
@@ -954,20 +965,20 @@ server <- function(input, output, session) {
     )
   })
 
-  output$histogram_explanation <- renderUI({
+  output$histogram_explanation <- shiny::renderUI({
     history <- permutation_history()
 
     if (nrow(history) == 0) {
-      return(tags$p("No permutations have been generated yet."))
+      return(shiny::tags$p("No permutations have been generated yet."))
     }
 
     lower_tail_count <- sum(history$permuted_difference <= observed_difference)
     lower_tail_proportion <- lower_tail_count / nrow(history)
     two_tailed_p <- 2 * lower_tail_proportion
 
-    tags$div(
+    shiny::tags$div(
       class = "histogram-note",
-      tags$p(
+      shiny::tags$p(
         paste0(
           lower_tail_count,
           " of ",
@@ -977,7 +988,7 @@ server <- function(input, output, session) {
           " hours."
         )
       ),
-      tags$p(
+      shiny::tags$p(
         paste0(
           "Two-tailed P-value = 2 × ",
           round(lower_tail_proportion, 4),
@@ -989,4 +1000,4 @@ server <- function(input, output, session) {
   })
 }
 
-shinyApp(ui = ui, server = server)
+shiny::shinyApp(ui = ui, server = server)
