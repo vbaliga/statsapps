@@ -16,10 +16,10 @@ knitr::opts_chunk$set(
 # statsapps
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
-The `statsapps` package features interactive `Shiny` apps to help you learn 
-concepts from data science & statistics. 
+The `statsapps` package features interactive `Shiny` apps to help you learn concepts from data science & statistics.
 
 ## Installation
 
@@ -32,19 +32,30 @@ pak::pak("vbaliga/statsapps")
 
 ## Example
 
-Uncomment the lines below and run them to see the Permutation app
+Use `run_permutation_app()` to start the Shiny app.
 
-```{r example}
-# library(statsapps)
-# run_permutation_app()
+```{r example, eval=FALSE, include=TRUE}
+library(statsapps)
+run_permutation_app()
 ```
+
+This will open a new window with the Shiny app. It is recommended to hit the "Open in Browser" button at the top to get the best view of the app.
+
+![](man/figures/perm_app_01.png){width="600"}
+
+<br>
+
+The first two tabs provide an explanation and the original data. The third tab shows the results of performing permutations.
+
+![](man/figures/perm_app_02.png)
+
+<hr>
 
 # Contributing and/or raising Issues
 
 Feedback on bugs, improvements, and/or feature requests are all welcome. Please see the Issues templates on GitHub to make a bug fix request or feature request.
 
 To contribute code via a pull request, please consult the Contributing Guide first.
-
 
 # Citation
 
