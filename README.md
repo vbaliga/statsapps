@@ -12,12 +12,21 @@ learn concepts from data science & statistics.
 
 ## Installation
 
-You can install the development version of `statsapps` from
-[this GitHub repo](https://github.com/vbaliga/statsapps) with:
+You can install the development version of `statsapps` from [this GitHub
+repo](https://github.com/vbaliga/statsapps) with:
 
 ``` r
 # install.packages("pak")
 pak::pak("vbaliga/statsapps")
+```
+
+## Example
+
+Use `run_permutation_app()` to start the Shiny app.
+
+``` r
+library(statsapps)
+run_permutation_app()
 ```
 
 ## Example
