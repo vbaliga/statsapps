@@ -7,8 +7,8 @@
 
 <!-- badges: end -->
 
-The statsapps package features interactive Shiny apps to help you learn
-concepts from data science & statistics.
+The `statsapps` package features interactive `Shiny` apps to help you
+learn concepts from data science & statistics.
 
 ## Installation
 
@@ -22,11 +22,11 @@ pak::pak("vbaliga/statsapps")
 
 ## Example
 
-Placeholder for example (TBD)
+Uncomment the lines below and run them to see the Permutation app
 
 ``` r
-#library(statsapps)
-## basic example code
+# library(statsapps)
+# run_permutation_app()
 ```
 
 # Contributing and/or raising Issues
