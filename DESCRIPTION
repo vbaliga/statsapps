@@ -1,12 +1,26 @@
 Package: statsapps
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Title: Interactive Shiny Apps to Learn Statistics in R 
+Version: 0.0.1.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+    person(given = "Vikram B.",
+                 family = "Baliga", 
+                 role = c("aut", "cre", "cph"),
+                 email = "vikram.baliga@ubc.ca",
+                 comment = c(ORCID = "0000-0002-9367-8974")
+                 )
+Description: 
+    Each major function runs a Shiny app locally, each of which
+    provides an interactive app to help users better understand
+    concepts from data science & statistics.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 8.0.0
+Imports: 
+    ggplot2 (>= 3.3.0),
+    dplyr (>= 1.0.0),
+    shiny
+Depends: 
+    R (>= 3.3.0)
 URL: https://github.com/vbaliga/statsapps
 BugReports: https://github.com/vbaliga/statsapps/issues
