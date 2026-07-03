@@ -1,0 +1,57 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# statsapps
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+The statsapps package features interactive Shiny apps to help you learn 
+concepts from data science & statistics. 
+
+## Installation
+
+You can install the development version of statsapps from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("pak")
+pak::pak("vbaliga/statsapps")
+```
+
+## Example
+
+Placeholder for example (TBD)
+
+```{r example}
+#library(statsapps)
+## basic example code
+```
+
+# Contributing and/or raising Issues
+
+Feedback on bugs, improvements, and/or feature requests are all welcome. Please see the Issues templates on GitHub to make a bug fix request or feature request.
+
+To contribute code via a pull request, please consult the Contributing Guide first.
+
+
+# Citation
+
+TBD
+
+# License
+
+See LICENSE file (MIT)
+
+🐢
