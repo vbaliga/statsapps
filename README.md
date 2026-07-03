@@ -7,13 +7,13 @@
 
 <!-- badges: end -->
 
-The `statsapps` package features interactive `Shiny` apps to help you
+The `statsapps` R package features interactive `Shiny` apps to help you
 learn concepts from data science & statistics.
 
 ## Installation
 
-You can install the development version of statsapps from
-[GitHub](https://github.com/) with:
+You can install the development version of `statsapps` from
+[this GitHub repo](https://github.com/vbaliga/statsapps) with:
 
 ``` r
 # install.packages("pak")
