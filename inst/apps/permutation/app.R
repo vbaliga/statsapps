@@ -15,7 +15,7 @@ cricket_data <- tibble::tibble(
   )
 ) |>
   dplyr::mutate(
-    observation_id = row_number()
+    observation_id = dplyr::row_number()
   )
 
 ## Fixed observed difference from the real study.
@@ -72,7 +72,11 @@ make_slide_table <- function(data, group_name) {
     dplyr::filter(randomized_group == group_name) |>
     dplyr::arrange(time_hours) |>
     dplyr::mutate(
-      row_class = if_else(original_group == "Fed", "original-fed", "original-starved")
+      row_class = dplyr::if_else(
+        original_group == "Fed",
+        "original-fed",
+        "original-starved"
+      )
     )
 }
 
@@ -857,7 +861,7 @@ server <- function(input, output, session) {
         lower_tail = permuted_difference <= observed_difference
       )
 
-    ggplot2::ggplot(history, aes(x = permuted_difference)) +
+    ggplot2::ggplot(history, ggplot2::aes(x = permuted_difference)) +
       ggplot2::geom_histogram(
         data = dplyr::filter(history, !lower_tail),
         binwidth = 2,
