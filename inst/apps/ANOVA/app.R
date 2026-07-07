@@ -20,6 +20,17 @@ ui <- shiny::fluidPage(
       .boxplot-wrapper {
         margin-bottom: 14px;
       }
+
+      .footer-note {
+        color: #555555;
+        font-size: 14px;
+        line-height: 1.35;
+        margin-top: 18px;
+        padding: 12px 8px 18px 8px;
+        border-top: 1px solid #e5e5e5;
+        width: 100%;
+      }
+
     "))
   ),
 
@@ -102,6 +113,18 @@ ui <- shiny::fluidPage(
       shiny::uiOutput("anova_decomposition"),
       shiny::uiOutput("p_value_section")
     )
+  ),
+
+  shiny::div(
+    class = "footer-note",
+    "Developed by ",
+    shiny::tags$a(
+      href = "https://vbaliga.github.io/",
+      target = "_blank",
+      rel = "noopener noreferrer",
+      "Vikram Baliga"
+    ),
+    " at the University of British Columbia."
   )
 )
 
