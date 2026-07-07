@@ -8,8 +8,8 @@
 #' Johnson et al. (1999), as presented in *The Analysis of Biological Data* by
 #' Whitlock and Schluter.
 #'
-#' @param ... Optional arguments passed to [shiny::runApp()], such as
-#'   `launch.browser = TRUE`.
+#' @param ... Optional arguments passed to [shiny::runApp()]. Most users can
+#'   ignore this.
 #'
 #' @return `run_permutation_app()` opens the Shiny app locally.
 #'
