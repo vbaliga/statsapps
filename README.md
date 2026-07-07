@@ -1,6 +1,4 @@
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
-
 # statsapps
 
 <!-- badges: start -->
@@ -35,23 +33,30 @@ run_permutation_app()
 
 This will open a new window with the Shiny app. It is recommended to hit
 the “Open in Browser” button at the top to get the best view of the app.
+This will open the app in your default web browser.
 
-<img src="man/figures/perm_app_01.png" width="700" />
+<p align="center">
 
-<br>
+<img src="man/figures/perm_app_01.png" width="700">
+</p>
 
-The example we showcase here is the Permutation Test app, which allows
-you to perform and visualize permutations and see how the result of each
-permutation incrementally builds the null distribution. There are
-several tabs within the main window of the app. The first two tabs
-provide an explanation and the original data. The third tab shows the
-results of performing permutations. The buttons in the left sidebar
+The example we showcase here is the Permutation Test app, demonstrates
+how repeated random reassignment of observations can be used to build a
+null distribution for a two-sample permutation test. As with all
+`statsapps`, this app is interactive and allows you to see the results
+of individual permutations, and how the result of each permutation
+incrementally builds the null distribution.
+
+There are several tabs within the main window of the app. The first two
+tabs provide an explanation and the original data. The third tab shows
+the results of performing permutations. The buttons in the left sidebar
 allow you to perform permutations and visualize the outcome of the most
 recent permutation.
 
-<br>
+<p align="center">
 
-<img src="man/figures/perm_app_02.png" width="700" />
+<img src="man/figures/perm_app_02.png" width="700">
+</p>
 
 <hr>
 
@@ -60,9 +65,6 @@ recent permutation.
 Feedback on bugs, improvements, and/or feature requests are all welcome.
 Please see the Issues templates on GitHub to make a bug fix request or
 feature request.
-
-To contribute code via a pull request, please consult the Contributing
-Guide first.
 
 # Citation
 

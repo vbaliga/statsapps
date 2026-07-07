@@ -525,7 +525,7 @@ ui <- shiny::fluidPage(
             shiny::div(
               class = "permutation-right",
 
-              shiny::div(class = "permutation-subtitle", "The Null distribution"),
+              shiny::div(class = "permutation-subtitle", "The null distribution"),
 
               shiny::div(
                 class = "permutation-histogram-text",
@@ -710,10 +710,10 @@ server <- function(input, output, session) {
         linewidth = 0.7
       ) +
       ggplot2::facet_wrap(
-        vars(original_group),
+        ggplot2::vars(original_group),
         ncol = 1,
         scales = "free_y",
-        labeller = as_labeller(c(
+        labeller = ggplot2::as_labeller(c(
           "Starved" = "Starved females",
           "Fed" = "Fed females"
         ))
@@ -725,7 +725,7 @@ server <- function(input, output, session) {
       ) +
       ggplot2::scale_y_continuous(
         breaks = seq(0, 8, 2),
-        expand = expansion(mult = c(0, 0.12))
+        expand = ggplot2::expansion(mult = c(0, 0.12))
       ) +
       ggplot2::labs(
         x = "Time to mating (hours)",
@@ -741,8 +741,8 @@ server <- function(input, output, session) {
           color = "#222222"
         ),
         axis.title = ggplot2::element_text(face = "bold", size = 19),
-        axis.title.y = ggplot2::element_text(margin = margin(r = 12)),
-        axis.title.x = ggplot2::element_text(margin = margin(t = 12)),
+        axis.title.y = ggplot2::element_text(margin = ggplot2::margin(r = 12)),
+        axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 12)),
         axis.text = ggplot2::element_text(color = "#222222", size = 16),
         axis.line = ggplot2::element_line(color = "#222222", linewidth = 0.7),
         axis.ticks = ggplot2::element_line(color = "#222222", linewidth = 0.7),
