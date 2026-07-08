@@ -13,13 +13,17 @@ linear_reg_data <- data.frame(
 
 linear_reg_data$x <- exp(linear_reg_data$x_log_true)
 
-random_error <- stats::rnorm(
+raw_error <- stats::rnorm(
   n = nrow(linear_reg_data),
   mean = 0,
   sd = residual_sd
 )
 
-random_error <- random_error - mean(random_error)
+random_error <- stats::residuals(
+  stats::lm(raw_error ~ linear_reg_data$x_log_true)
+)
+
+random_error <- random_error / stats::sd(random_error) * residual_sd
 
 linear_reg_data$y <- true_intercept +
   true_slope * linear_reg_data$x_log_true +
@@ -144,13 +148,61 @@ ui <- shiny::fluidPage(
         margin-top: 0;
         margin-bottom: 8px;
       }
+
+      .ssr-title sub {
+        font-size: 60%;
+        vertical-align: sub;
+      }
+
+      .ssr-formula {
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 21px;
+        line-height: 1.4;
+        margin-top: 6px;
+        margin-bottom: 12px;
+      }
+
+      .ssr-formula sub {
+        font-size: 65%;
+      }
+
+      .ssr-formula sup {
+        font-size: 70%;
+      }
+
+      .solution-box {
+        background-color: #ffffff;
+        border: 1px solid #dddddd;
+        border-radius: 4px;
+        padding: 12px;
+        margin-top: 18px;
+      }
+
+      .solution-box h4 {
+        margin-top: 0;
+        color: #315f96;
+        font-weight: 400;
+      }
+
+      .solution-box pre {
+        font-size: 12px;
+        white-space: pre-wrap;
+        word-break: normal;
+      }
+
+      .data-note {
+        font-size: 15px;
+        line-height: 1.4;
+        margin-top: 0;
+        margin-bottom: 10px;
+      }
     "))
   ),
 
   shiny::titlePanel(
     shiny::div(
       class = "app-title",
-      "Simple Linear Regression"
+      "Fitting a linear regression"
     )
   ),
 
@@ -170,7 +222,7 @@ ui <- shiny::fluidPage(
         "Intercept",
         min = intercept_range[1],
         max = intercept_range[2],
-        value = 5,
+        value = -5,
         step = 0.25
       ),
 
@@ -179,7 +231,7 @@ ui <- shiny::fluidPage(
         "Slope",
         min = slope_range[1],
         max = slope_range[2],
-        value = 0.75,
+        value = -2,
         step = 0.25
       ),
 
@@ -193,7 +245,25 @@ ui <- shiny::fluidPage(
         "log_y",
         "Use log(Y)",
         value = FALSE
-      )
+      ),
+
+      shiny::br(),
+
+      shiny::actionButton(
+        "reset",
+        "Reset",
+        width = "100%"
+      ),
+
+      shiny::br(),
+
+      shiny::actionButton(
+        "solution",
+        "Show solution",
+        width = "100%"
+      ),
+
+      shiny::uiOutput("solution_box")
     ),
 
     shiny::mainPanel(
@@ -208,28 +278,55 @@ ui <- shiny::fluidPage(
             class = "regression-subtitle",
             "Data and fitted linear model"
           ),
+          shiny::tags$p(
+            class = "data-note",
+            "The line shows your current attempt, based on the values of the
+            intercept and slope sliders. Red vertical lines show residuals: the
+            differences between observed Y-values (black dots) and values
+            predicted by the line."
+          ),
           shiny::plotOutput("regression_plot", height = "390px")
         ),
 
         shiny::div(
           class = "plot-cell ssr-cell",
           shiny::div(
-            class = "regression-subtitle",
-            "Sum of squares of residuals"
+            class = "regression-subtitle ssr-title",
+            "SS",
+            shiny::tags$sub("residual")
+          ),
+
+          shiny::tags$p(
+            class = "ssr-note",
+            "In the plot below, the X marks the sum of squares of the residuals (",
+            "SS",
+            shiny::tags$sub("residual"),
+            ") for your current attempt."
+          ),
+
+          shiny::div(
+            class = "ssr-formula",
+            shiny::HTML(
+              "SS<sub>residual</sub> = &sum;<sub>i</sub> (Y<sub>i</sub> &minus; &#374;<sub>i</sub>)<sup>2</sup>"
+            )
           ),
           shiny::tags$p(
             class = "ssr-note",
-            "In the plot below, the X marks the sum of squares of the residuals
-            for your current attempt. The open green circle marks the smallest
-            sum of squares possible for the variables as they are currently
-            used (i.e., after any log transformations you selected)."
+            "The open green circle marks the smallest sum of squares possible
+            for the variables as they are currently used (i.e., after any log
+            transformations you selected)."
           ),
           shiny::tags$p(
             class = "ssr-note",
-            "As you adjust intercept and slope values, try to move the X as
-            close as possible to the circle. That said, even if you minimize this
-            value, you must still check the residual plot below. Minimizing the
-            sum of squares value does not guarantee that the regression model is
+            "As you adjust intercept and slope values, try to get the X as
+            close as possible to the circle. That said, even if you minimize ",
+            "SS",
+            shiny::tags$sub("residual"),
+            ", you should still check the residual plots below. Minimizing the
+            value of ",
+            "SS",
+            shiny::tags$sub("residual"),
+            "does not guarantee that the regression model is
             appropriate!"
           ),
           shiny::div(
@@ -274,6 +371,7 @@ ui <- shiny::fluidPage(
 )
 
 server <- function(input, output, session) {
+  solution_visible <- shiny::reactiveVal(FALSE)
   displayed_data <- shiny::reactive({
     data <- linear_reg_data
 
@@ -293,6 +391,91 @@ server <- function(input, output, session) {
     data$residual <- data$y_display - data$fitted_display
 
     data
+  })
+
+  output$solution_summary <- shiny::renderPrint({
+    linreg_data <- data.frame(
+      Y = linear_reg_data$y,
+      log_X = log(linear_reg_data$x)
+    )
+
+    summary(lm(Y ~ log_X, data = linreg_data))
+  })
+
+  output$solution_box <- shiny::renderUI({
+    if (!solution_visible()) {
+      return(NULL)
+    }
+
+    shiny::div(
+      class = "solution-box",
+      shiny::tags$h4("Solution"),
+      shiny::tags$p(
+        "The data show a linear relationship between Y and log(X)."
+      ),
+      shiny::tags$p(
+        shiny::HTML(
+          "The best-fit line is: <strong>Y = 8 + 1.25 log(X)</strong>."
+        )
+      ),
+      shiny::verbatimTextOutput("solution_summary")
+    )
+  })
+
+  shiny::observeEvent(input$solution, {
+    solution_visible(TRUE)
+
+    shiny::updateCheckboxInput(
+      session = session,
+      inputId = "log_x",
+      value = TRUE
+    )
+
+    shiny::updateCheckboxInput(
+      session = session,
+      inputId = "log_y",
+      value = FALSE
+    )
+
+    shiny::updateSliderInput(
+      session = session,
+      inputId = "intercept",
+      value = true_intercept
+    )
+
+    shiny::updateSliderInput(
+      session = session,
+      inputId = "slope",
+      value = true_slope
+    )
+  })
+
+  shiny::observeEvent(input$reset, {
+    solution_visible(FALSE)
+
+    shiny::updateCheckboxInput(
+      session = session,
+      inputId = "log_x",
+      value = FALSE
+    )
+
+    shiny::updateCheckboxInput(
+      session = session,
+      inputId = "log_y",
+      value = FALSE
+    )
+
+    shiny::updateSliderInput(
+      session = session,
+      inputId = "intercept",
+      value = -5
+    )
+
+    shiny::updateSliderInput(
+      session = session,
+      inputId = "slope",
+      value = -2
+    )
   })
 
   current_ssr <- shiny::reactive({
@@ -366,7 +549,7 @@ server <- function(input, output, session) {
           yend = fitted_display
         ),
         color = "#c92514",
-        linewidth = 0.6,
+        linewidth = 0.3,
         alpha = 0.75
       ) +
       ggplot2::geom_point(
@@ -402,15 +585,15 @@ server <- function(input, output, session) {
       ggplot2::geom_point(
         data = subset(plot_data, marker == "Target"),
         shape = 1,
-        size = 4.2,
-        stroke = 1.1,
+        size = 6,
+        stroke = 2,
         color = "forestgreen"
       ) +
       ggplot2::geom_point(
         data = subset(plot_data, marker == "Current"),
         shape = 4,
-        size = 4.8,
-        stroke = 1.1,
+        size = 6,
+        stroke = 2,
         color = "#222222"
       ) +
       ggplot2::scale_x_continuous(
@@ -507,15 +690,15 @@ server <- function(input, output, session) {
         linewidth = 1.1,
         linetype = "dashed"
       ) +
-      ggplot2::stat_function(
-        fun = stats::dnorm,
-        args = list(
-          mean = residual_mean,
-          sd = residual_sd
-        ),
-        color = "#666666",
-        linewidth = 1.1
-      ) +
+      # ggplot2::stat_function(
+      #   fun = stats::dnorm,
+      #   args = list(
+      #     mean = residual_mean,
+      #     sd = residual_sd
+      #   ),
+      #   color = "#666666",
+      #   linewidth = 1.1
+      # ) +
       ggplot2::labs(
         x = "Residual",
         y = "Density"
