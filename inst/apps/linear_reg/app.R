@@ -2,21 +2,47 @@ true_intercept <- 8
 true_slope <- 1.25
 residual_sd <- 0.6
 
-set.seed(20260707)
+intercept_range <- c(-5, 12)
+slope_range <- c(-2, 4)
+
+set.seed(202607)
 
 linear_reg_data <- data.frame(
-  x_log_true = stats::runif(60, min = -2, max = 2)
+  x_log_true = stats::runif(100, min = -2, max = 2)
 )
 
 linear_reg_data$x <- exp(linear_reg_data$x_log_true)
 
+random_error <- stats::rnorm(
+  n = nrow(linear_reg_data),
+  mean = 0,
+  sd = residual_sd
+)
+
+random_error <- random_error - mean(random_error)
+
 linear_reg_data$y <- true_intercept +
   true_slope * linear_reg_data$x_log_true +
-  stats::rnorm(
-    n = nrow(linear_reg_data),
-    mean = 0,
-    sd = residual_sd
-  )
+  random_error
+
+calculate_ssr <- function(data, intercept, slope, log_x, log_y) {
+  x_display <- if (isTRUE(log_x)) {
+    log(data$x)
+  } else {
+    data$x
+  }
+
+  y_display <- if (isTRUE(log_y)) {
+    log(data$y)
+  } else {
+    data$y
+  }
+
+  fitted_display <- intercept + slope * x_display
+  residual <- y_display - fitted_display
+
+  sum(residual^2)
+}
 
 ui <- shiny::fluidPage(
   shiny::tags$head(
@@ -50,6 +76,74 @@ ui <- shiny::fluidPage(
         border-top: 1px solid #e5e5e5;
         width: 100%;
       }
+
+      .lower-plot-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        column-gap: 32px;
+        row-gap: 24px;
+        align-items: start;
+      }
+
+      .plot-cell {
+        min-width: 0;
+      }
+
+      .plot-cell .regression-subtitle {
+        margin-top: 18px;
+      }
+
+      @media (max-width: 1100px) {
+        .lower-plot-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .plot-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        column-gap: 34px;
+        row-gap: 28px;
+        align-items: start;
+      }
+
+      .plot-cell {
+        min-width: 0;
+      }
+
+      .plot-cell .regression-subtitle {
+        margin-top: 18px;
+      }
+
+      @media (max-width: 1100px) {
+        .plot-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .ssr-cell {
+        display: flex;
+        flex-direction: column;
+        height: 390px;
+      }
+
+      .ssr-note {
+        font-size: 15px;
+        line-height: 1.4;
+        margin-top: 0;
+        margin-bottom: 10px;
+      }
+
+      .ssr-plot-wrap {
+        margin-top: auto;
+      }
+
+      .residual-mean-note {
+        font-size: 15px;
+        line-height: 1.35;
+        margin-top: 0;
+        margin-bottom: 8px;
+      }
     "))
   ),
 
@@ -66,14 +160,16 @@ ui <- shiny::fluidPage(
 
       shiny::tags$p(
         class = "control-note",
-        "Try to find values for the intercept and slope that minimize the residual error from the linear model."
+        "Try to find values for the intercept and slope that minimize the
+        residual error from the linear model. Consider whether it would help
+        to log transform either variable (or both)."
       ),
 
       shiny::sliderInput(
         "intercept",
         "Intercept",
-        min = -5,
-        max = 12,
+        min = intercept_range[1],
+        max = intercept_range[2],
         value = 5,
         step = 0.25
       ),
@@ -81,21 +177,21 @@ ui <- shiny::fluidPage(
       shiny::sliderInput(
         "slope",
         "Slope",
-        min = -2,
-        max = 4,
+        min = slope_range[1],
+        max = slope_range[2],
         value = 0.75,
         step = 0.25
       ),
 
       shiny::checkboxInput(
         "log_x",
-        "Use log(x)",
+        "Use log(X)",
         value = FALSE
       ),
 
       shiny::checkboxInput(
         "log_y",
-        "Use log(y)",
+        "Use log(Y)",
         value = FALSE
       )
     ),
@@ -104,25 +200,63 @@ ui <- shiny::fluidPage(
       width = 8,
 
       shiny::div(
-        class = "regression-subtitle",
-        "Fitting a line"
-      ),
+        class = "plot-grid",
 
-      shiny::plotOutput("regression_plot", height = "420px"),
+        shiny::div(
+          class = "plot-cell",
+          shiny::div(
+            class = "regression-subtitle",
+            "Data and fitted linear model"
+          ),
+          shiny::plotOutput("regression_plot", height = "390px")
+        ),
 
-      shiny::div(
-        class = "regression-subtitle",
-        "Residual plot"
-      ),
+        shiny::div(
+          class = "plot-cell ssr-cell",
+          shiny::div(
+            class = "regression-subtitle",
+            "Sum of squares of residuals"
+          ),
+          shiny::tags$p(
+            class = "ssr-note",
+            "In the plot below, the X marks the sum of squares of the residuals
+            for your current attempt. The open green circle marks the smallest
+            sum of squares possible for the variables as they are currently
+            used (i.e., after any log transformations you selected)."
+          ),
+          shiny::tags$p(
+            class = "ssr-note",
+            "As you adjust intercept and slope values, try to move the X as
+            close as possible to the circle. That said, even if you minimize this
+            value, you must still check the residual plot below. Minimizing the
+            sum of squares value does not guarantee that the regression model is
+            appropriate!"
+          ),
+          shiny::div(
+            class = "ssr-plot-wrap",
+            shiny::plotOutput("ssr_plot", height = "125px")
+          )
+        ),
 
-      shiny::plotOutput("residual_plot", height = "300px"),
+        shiny::div(
+          class = "plot-cell",
+          shiny::div(
+            class = "regression-subtitle",
+            "Residual plot"
+          ),
+          shiny::plotOutput("residual_plot", height = "300px")
+        ),
 
-      shiny::div(
-        class = "regression-subtitle",
-        "Distribution of residuals"
-      ),
-
-      shiny::plotOutput("residual_distribution", height = "300px")
+        shiny::div(
+          class = "plot-cell",
+          shiny::div(
+            class = "regression-subtitle",
+            "Distribution of residuals"
+          ),
+          shiny::uiOutput("residual_mean_text"),
+          shiny::plotOutput("residual_distribution", height = "300px")
+        )
+      )
     )
   ),
 
@@ -161,17 +295,49 @@ server <- function(input, output, session) {
     data
   })
 
+  current_ssr <- shiny::reactive({
+    sum(displayed_data()$residual^2)
+  })
+
+  target_ssr <- shiny::reactive({
+    fit <- stats::lm(y_display ~ x_display, data = displayed_data())
+    sum(stats::residuals(fit)^2)
+  })
+
+  ssr_axis_max <- shiny::reactive({
+    ssr_combinations <- expand.grid(
+      intercept = intercept_range,
+      slope = slope_range,
+      KEEP.OUT.ATTRS = FALSE
+    )
+
+    max_ssr <- max(
+      mapply(
+        FUN = calculate_ssr,
+        intercept = ssr_combinations$intercept,
+        slope = ssr_combinations$slope,
+        MoreArgs = list(
+          data = linear_reg_data,
+          log_x = input$log_x,
+          log_y = input$log_y
+        )
+      )
+    )
+
+    max(pretty(c(0, max_ssr * 1.08), n = 5))
+  })
+
   axis_labels <- shiny::reactive({
     list(
       x = if (isTRUE(input$log_x)) {
-        "log(x)"
+        "log(X)"
       } else {
-        "x"
+        "X"
       },
       y = if (isTRUE(input$log_y)) {
-        "log(y)"
+        "log(Y)"
       } else {
-        "y"
+        "Y"
       }
     )
   })
@@ -225,6 +391,57 @@ server <- function(input, output, session) {
       )
   })
 
+  output$ssr_plot <- shiny::renderPlot({
+    plot_data <- data.frame(
+      ssr = c(current_ssr(), target_ssr()),
+      y = c(0.28, 0.28),
+      marker = c("Current", "Target")
+    )
+
+    ggplot2::ggplot(plot_data, ggplot2::aes(x = ssr, y = y)) +
+      ggplot2::geom_point(
+        data = subset(plot_data, marker == "Target"),
+        shape = 1,
+        size = 4.2,
+        stroke = 1.1,
+        color = "forestgreen"
+      ) +
+      ggplot2::geom_point(
+        data = subset(plot_data, marker == "Current"),
+        shape = 4,
+        size = 4.8,
+        stroke = 1.1,
+        color = "#222222"
+      ) +
+      ggplot2::scale_x_continuous(
+        limits = c(0, ssr_axis_max()),
+        breaks = pretty(c(0, ssr_axis_max()), n = 5),
+        expand = ggplot2::expansion(mult = c(0.03, 0.03))
+      ) +
+      ggplot2::scale_y_continuous(
+        limits = c(0, 1),
+        breaks = NULL,
+        expand = c(0, 0)
+      ) +
+      ggplot2::labs(
+        x = "Sum of squares of residuals",
+        y = NULL
+      ) +
+      ggplot2::theme_classic(base_size = 15) +
+      ggplot2::theme(
+        axis.line.y = ggplot2::element_blank(),
+        axis.ticks.y = ggplot2::element_blank(),
+        axis.text.y = ggplot2::element_blank(),
+        axis.title.y = ggplot2::element_blank(),
+        axis.title.x = ggplot2::element_text(
+          face = "bold",
+          margin = ggplot2::margin(t = 10)
+        ),
+        axis.text.x = ggplot2::element_text(color = "#222222"),
+        plot.margin = ggplot2::margin(8, 16, 20, 16)
+      )
+  })
+
   output$residual_plot <- shiny::renderPlot({
     labels <- axis_labels()
 
@@ -238,7 +455,7 @@ server <- function(input, output, session) {
         linewidth = 0.8
       ) +
       ggplot2::geom_point(
-        color = "#222222",
+        color = "#c92514",
         size = 2.3,
         alpha = 0.85
       ) +
@@ -253,6 +470,21 @@ server <- function(input, output, session) {
       )
   })
 
+  output$residual_mean_text <- shiny::renderUI({
+    residual_mean <- mean(displayed_data()$residual)
+
+    shiny::tags$p(
+      class = "residual-mean-note",
+      shiny::HTML(
+        paste0(
+          "Mean value of these residuals: <strong>",
+          round(residual_mean, 3),
+          "</strong>"
+        )
+      )
+    )
+  })
+
   output$residual_distribution <- shiny::renderPlot({
     data <- displayed_data()
     residual_mean <- mean(data$residual)
@@ -265,8 +497,15 @@ server <- function(input, output, session) {
       ggplot2::geom_histogram(
         ggplot2::aes(y = ggplot2::after_stat(density)),
         bins = 18,
-        fill = "grey75",
-        color = "#222222"
+        fill = "#c92514",
+        color = "#222222",
+        alpha = 0.85
+      ) +
+      ggplot2::geom_vline(
+        xintercept = residual_mean,
+        color = "#222222",
+        linewidth = 1.1,
+        linetype = "dashed"
       ) +
       ggplot2::stat_function(
         fun = stats::dnorm,
@@ -274,7 +513,7 @@ server <- function(input, output, session) {
           mean = residual_mean,
           sd = residual_sd
         ),
-        color = "#c92514",
+        color = "#666666",
         linewidth = 1.1
       ) +
       ggplot2::labs(
