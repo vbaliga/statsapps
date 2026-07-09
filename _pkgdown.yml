@@ -22,3 +22,10 @@ reference:
   - run_anova_app
   - run_linear_reg_app
   - run_distributions_app
+
+footer:
+  structure:
+    left: developed_by
+    right: built_with
+  components:
+    developed_by: Developed by [Vikram B. Baliga](https://vbaliga.github.io/).

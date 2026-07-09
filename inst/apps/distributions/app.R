@@ -1,10 +1,10 @@
 distribution_choices <- c(
-  "Normal" = "normal",
-  "t" = "t",
-  "Uniform" = "uniform",
-  "Poisson" = "poisson",
   "Binomial" = "binomial",
   "Chi-squared" = "chisq",
+  "Poisson" = "poisson",
+  "Uniform" = "uniform",
+  "Normal" = "normal",
+  "t" = "t",
   "F (ANOVA)" = "f"
 )
 
@@ -78,7 +78,10 @@ distribution_formula <- function(distribution) {
     ),
     t = paste0(
       "\\[",
-      "t_{\\mathrm{df}}",
+      "f(t) = ",
+      "\\frac{\\Gamma\\left(\\frac{\\mathrm{df} + 1}{2}\\right)}",
+      "{\\sqrt{\\mathrm{df}\\pi}\\,\\Gamma\\left(\\frac{\\mathrm{df}}{2}\\right)}",
+      "\\left(1 + \\frac{t^2}{\\mathrm{df}}\\right)^{-\\frac{\\mathrm{df} + 1}{2}}",
       "\\]"
     ),
     uniform = paste0(
@@ -98,7 +101,14 @@ distribution_formula <- function(distribution) {
     ),
     chisq = paste0(
       "\\[",
-      "\\chi^2_{\\mathrm{df}}",
+      "\\chi^2 = \\sum_i ",
+      "\\frac{(\\mathrm{Observed}_i - \\mathrm{Expected}_i)^2}",
+      "{\\mathrm{Expected}_i}",
+      "\\]",
+      "\\[",
+      "f(x) = ",
+      "\\frac{1}{2^{\\mathrm{df}/2}\\Gamma(\\mathrm{df}/2)}",
+      "x^{\\mathrm{df}/2 - 1}e^{-x/2}, \\quad x \\ge 0",
       "\\]"
     ),
     f = paste0(
@@ -108,7 +118,42 @@ distribution_formula <- function(distribution) {
       "\\[",
       "df_{\\mathrm{group}} = k - 1, \\quad ",
       "df_{\\mathrm{error}} = N - k",
+      "\\]",
+      "\\[",
+      "\\Pr(F \\ge x) \\text{ is the right-tail area under the } ",
+      "F_{df_{\\mathrm{group}}, df_{\\mathrm{error}}} \\text{ distribution.}",
       "\\]"
+    )
+  )
+}
+
+distribution_formula_symbols <- function(distribution) {
+  switch(
+    distribution,
+    normal = shiny::tagList(
+      shiny::tags$p(shiny::HTML("<strong>Symbols:</strong> <em>x</em> is a possible value, &mu; is the mean, and &sigma; is the standard deviation."))
+    ),
+    t = shiny::tagList(
+      shiny::tags$p(shiny::HTML("<strong>Symbols:</strong> <em>t</em> is a possible t statistic, and df is the degrees of freedom."))
+    ),
+    uniform = shiny::tagList(
+      shiny::tags$p(shiny::HTML("<strong>Symbols:</strong> <em>x</em> is a possible value. Values between <em>a</em> and <em>b</em> have equal density."))
+    ),
+    poisson = shiny::tagList(
+      shiny::tags$p(shiny::HTML("<strong>Symbols:</strong> <em>x</em> is a count. &mu; is the mean count, but in R this parameter is called lambda."))
+    ),
+    binomial = shiny::tagList(
+      shiny::tags$p(shiny::HTML("<strong>Symbols:</strong> <em>x</em> is the number of successes, <em>n</em> is the number of trials, and <em>p</em> is the probability of success."))
+    ),
+    chisq = shiny::tagList(
+      shiny::tags$p(
+        shiny::HTML(
+          "<strong>Symbols:</strong> <em>Observed</em><sub>i</sub> is an observed count, <em>Expected</em><sub>i</sub> is the expected count under the null hypothesis, <em>x</em> is a possible chi-squared value, and df is the degrees of freedom."
+        )
+      )
+    ),
+    f = shiny::tagList(
+      shiny::tags$p(shiny::HTML("<strong>Symbols:</strong> <em>F</em> is the ANOVA test statistic, <em>x</em> is a possible F value, df<sub>group</sub> is the numerator degrees of freedom, and df<sub>error</sub> is the denominator degrees of freedom."))
     )
   )
 }
@@ -116,14 +161,32 @@ distribution_formula <- function(distribution) {
 x_axis_label <- function(distribution, params) {
   switch(
     distribution,
-    normal = "Value",
+    normal = as.expression(bquote(x)),
     t = as.expression(bquote(t[.(params$df)])),
-    uniform = "Value",
-    poisson = "Count",
-    binomial = "Number of successes",
-    chisq = as.expression(bquote(chi[.(params$df)]^2)),
+    uniform = as.expression(bquote(x)),
+    poisson = as.expression(bquote(x~"(count)")),
+    binomial = as.expression(bquote(x~"(number of successes)")),
+    chisq = as.expression(bquote(chi^2[.(params$df)])),
     f = as.expression(
-      bquote(F[.(params$df_group), .(params$df_error)])
+      bquote(F[list(.(params$df_group), .(params$df_error))])
+    )
+  )
+}
+
+x_axis_label_code <- function(distribution, params) {
+  switch(
+    distribution,
+    normal = "expression(x)",
+    t = paste0("expression(t[", format_number(params$df), "])"),
+    uniform = "expression(x)",
+    poisson = "expression(x~\"(count)\")",
+    binomial = "expression(x~\"(number of successes)\")",
+    chisq = paste0("expression(chi^2[", format_number(params$df), "])"),
+    f = paste0(
+      "expression(F[list(",
+      format_number(params$df_group), ", ",
+      format_number(params$df_error),
+      ")])"
     )
   )
 }
@@ -433,7 +496,8 @@ make_plot_code <- function(distribution, params) {
       "ggplot(plot_data, aes(x = x, y = density)) +\n",
       "  geom_area(alpha = 0.2) +\n",
       "  geom_line(linewidth = 1.2) +\n",
-      "  labs(x = \"Value\", y = \"Density\") +\n",
+      "  labs(x = ", x_axis_label_code(distribution, params),
+      ", y = \"Density\") +\n",
       "  theme_classic()"
     ),
     t = paste0(
@@ -464,7 +528,8 @@ make_plot_code <- function(distribution, params) {
       "ggplot(plot_data, aes(x = x, y = density)) +\n",
       "  geom_area(alpha = 0.2) +\n",
       "  geom_line(linewidth = 1.2) +\n",
-      "  labs(x = \"Value\", y = \"Density\") +\n",
+      "  labs(x = ", x_axis_label_code(distribution, params),
+      ", y = \"Density\") +\n",
       "  theme_classic()"
     ),
     poisson = paste0(
@@ -487,7 +552,8 @@ make_plot_code <- function(distribution, params) {
       "    breaks = plot_data$x,\n",
       "    labels = plot_data$x_label\n",
       "  ) +\n",
-      "  labs(x = \"Value\", y = \"Probability\") +\n",
+      "  labs(x = ", x_axis_label_code(distribution, params),
+      ", y = \"Probability\") +\n",
       "  theme_classic()"
     ),
     binomial = paste0(
@@ -502,7 +568,8 @@ make_plot_code <- function(distribution, params) {
       "ggplot(plot_data, aes(x = x, y = probability)) +\n",
       "  geom_col() +\n",
       "  scale_x_continuous(breaks = x) +\n",
-      "  labs(x = \"Value\", y = \"Probability\") +\n",
+      "  labs(x = ", x_axis_label_code(distribution, params),
+      ", y = \"Probability\") +\n",
       "  theme_classic()"
     ),
     chisq = paste0(
@@ -629,6 +696,16 @@ ui <- shiny::fluidPage(
         margin-top: 0;
         margin-bottom: 8px;
       }
+
+      .formula-symbols {
+        font-size: 14px;
+        line-height: 1.35;
+        margin-top: 10px;
+      }
+
+      .formula-symbols p {
+        margin-bottom: 6px;
+      }
     "))
   ),
 
@@ -653,7 +730,7 @@ ui <- shiny::fluidPage(
         inputId = "distribution",
         label = "Distribution",
         choices = distribution_choices,
-        selected = "normal"
+        selected = "binomial"
       ),
 
       shiny::uiOutput("parameter_inputs"),
@@ -759,7 +836,7 @@ server <- function(input, output, session) {
         shiny::numericInput(
           "poisson_lambda",
           shiny::HTML("Mean count (&mu;)"),
-          value = 4,
+          value = 4.20,
           min = 0.0001
         )
       ),
@@ -850,8 +927,14 @@ server <- function(input, output, session) {
       class = "equation-box",
       shiny::tags$h4("Formula"),
       shiny::withMathJax(
-        shiny::HTML(
-          distribution_formula(current_distribution())
+        shiny::tagList(
+          shiny::HTML(
+            distribution_formula(current_distribution())
+          ),
+          shiny::div(
+            class = "formula-symbols",
+            distribution_formula_symbols(current_distribution())
+          )
         )
       )
     )
