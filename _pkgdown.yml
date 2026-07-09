@@ -1,0 +1,24 @@
+url: https://vbaliga.github.io/statsapps/
+
+template:
+  bootstrap: 5
+  bootswatch: flatly
+  bslib:
+    primary: "#315f96"
+
+home:
+  title: statsapps
+  description: Interactive Shiny apps for learning statistics in R.
+
+navbar:
+  structure:
+    left: [reference]
+    right: [github]
+
+reference:
+- title: Launch apps
+  contents:
+  - run_permutation_app
+  - run_anova_app
+  - run_linear_reg_app
+  - run_distributions_app

@@ -60,17 +60,17 @@ recent permutation.
 
 <hr>
 
-# Contributing and/or raising Issues
+## Contributing and/or raising Issues
 
 Feedback on bugs, improvements, and/or feature requests are all welcome.
 Please see the Issues templates on GitHub to make a bug fix request or
 feature request.
 
-# Citation
+## Citation
 
 TBD
 
-# License
+## License
 
 See LICENSE file (MIT)
 
