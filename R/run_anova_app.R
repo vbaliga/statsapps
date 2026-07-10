@@ -5,8 +5,8 @@
 #'
 #' All data are simulated in R via `rnorm()`.
 #'
-#' @param ... Optional arguments passed to [shiny::runApp()]. Most users can
-#'   ignore this.
+#' @param ... Optional arguments passed to [shiny::runApp()], such as
+#'   `launch.browser = TRUE`. Most users can ignore this.
 #'
 #' @return `run_anova_app()` opens the Shiny app locally.
 #'
@@ -17,14 +17,5 @@
 #' @examplesIf interactive()
 #' run_anova_app()
 run_anova_app <- function(...) {
-  app_dir <- system.file("apps", "ANOVA", package = "statsapps")
-
-  if (identical(app_dir, "")) {
-    stop(
-      "Could not find the ANOVA app. Try reinstalling statsapps.",
-      call. = FALSE
-    )
-  }
-
-  shiny::runApp(app_dir, ...)
+  run_statsapps_app("ANOVA", ...)
 }

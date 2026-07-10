@@ -7,8 +7,8 @@
 run_anova_app(...)
 }
 \arguments{
-\item{...}{Optional arguments passed to \code{\link[shiny:runApp]{shiny::runApp()}}. Most users can
-ignore this.}
+\item{...}{Optional arguments passed to \code{\link[shiny:runApp]{shiny::runApp()}}, such as
+\code{launch.browser = TRUE}. Most users can ignore this.}
 }
 \value{
 \code{run_anova_app()} opens the Shiny app locally.

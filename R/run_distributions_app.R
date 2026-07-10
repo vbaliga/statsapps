@@ -5,8 +5,7 @@
 #'
 #' All data were simulated and don't come from a specific study.
 #'
-#' @param ... Optional arguments passed to [shiny::runApp()]. Most users can
-#'   ignore this.
+#' @inheritParams run_anova_app
 #'
 #' @return `run_distributions_app()` opens the Shiny app locally.
 #'
@@ -15,14 +14,5 @@
 #' @examplesIf interactive()
 #' run_distributions_app()
 run_distributions_app <- function(...) {
-  app_dir <- system.file("apps", "distributions", package = "statsapps")
-
-  if (identical(app_dir, "")) {
-    stop(
-      "Could not find the distributions app. Try reinstalling statsapps.",
-      call. = FALSE
-    )
-  }
-
-  shiny::runApp(app_dir, ...)
+  run_statsapps_app("distributions", ...)
 }

@@ -8,8 +8,7 @@
 #' Johnson et al. (1999), as presented in *The Analysis of Biological Data* by
 #' Whitlock and Schluter.
 #'
-#' @param ... Optional arguments passed to [shiny::runApp()]. Most users can
-#'   ignore this.
+#' @inheritParams run_anova_app
 #'
 #' @return `run_permutation_app()` opens the Shiny app locally.
 #'
@@ -23,14 +22,5 @@
 #' @examplesIf interactive()
 #' run_permutation_app()
 run_permutation_app <- function(...) {
-  app_dir <- system.file("apps", "permutation", package = "statsapps")
-
-  if (identical(app_dir, "")) {
-    stop(
-      "Could not find the permutation app. Try reinstalling statsapps.",
-      call. = FALSE
-    )
-  }
-
-  shiny::runApp(app_dir, ...)
+  run_statsapps_app("permutation", ...)
 }
