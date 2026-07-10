@@ -15,8 +15,8 @@ run_permutation_app(...)
 - ...:
 
   Optional arguments passed to
-  [`shiny::runApp()`](https://rdrr.io/pkg/shiny/man/runApp.html). Most
-  users can ignore this.
+  [`shiny::runApp()`](https://rdrr.io/pkg/shiny/man/runApp.html), such
+  as `launch.browser = TRUE`. Most users can ignore this.
 
 ## Value
 
