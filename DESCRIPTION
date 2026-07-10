@@ -1,6 +1,6 @@
 Package: statsapps
-Title: Interactive Shiny Apps to Learn Statistics in R
-Version: 0.0.2.9000
+Title: Interactive Shiny Apps to Learn Statistics Intuitively
+Version: 0.0.3.9000
 Authors@R: 
     person(given = "Vikram B.",
                  family = "Baliga", 

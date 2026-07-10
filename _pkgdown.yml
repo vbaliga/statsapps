@@ -18,10 +18,11 @@ navbar:
 reference:
 - title: Launch apps
   contents:
-  - run_permutation_app
+  - run_distributions_app
+  - run_sums_squares_app
   - run_anova_app
   - run_linear_reg_app
-  - run_distributions_app
+  - run_permutation_app
 
 footer:
   structure:
