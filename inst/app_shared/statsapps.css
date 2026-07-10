@@ -1,0 +1,73 @@
+body {
+  font-size: 18px;
+}
+
+.control-note {
+  font-size: 18px;
+  line-height: 1.45;
+  margin-bottom: 18px;
+}
+
+.well .control-label,
+.well .selectize-input,
+.well .form-control {
+  font-size: 18px;
+}
+
+.selectize-dropdown {
+  font-size: 18px;
+}
+
+.plot-note,
+.code-note {
+  font-size: 18px;
+  line-height: 1.45;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+label,
+.control-label,
+.selectize-input,
+.form-control,
+.irs,
+.irs-grid-text,
+.irs-min,
+.irs-max,
+.irs-single,
+.irs-from,
+.irs-to {
+  font-size: 16px;
+}
+
+pre,
+code {
+  font-size: 15px;
+}
+
+.app-title {
+  color: #315f96;
+  font-size: 38px;
+  font-weight: 400;
+  line-height: 1.15;
+  margin-bottom: 18px;
+}
+
+.app-subtitle {
+  color: #315f96;
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1.2;
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.footer-note {
+  color: #555555;
+  font-size: 14px;
+  line-height: 1.35;
+  margin-top: 18px;
+  padding: 12px 8px 18px 8px;
+  border-top: 1px solid #e5e5e5;
+  width: 100%;
+}

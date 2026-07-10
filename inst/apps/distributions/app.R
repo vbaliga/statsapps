@@ -1,3 +1,15 @@
+statsapps_shared_file <- function(...) {
+  installed_file <- system.file("app_shared", ..., package = "statsapps")
+
+  if (nzchar(installed_file)) {
+    return(installed_file)
+  }
+
+  file.path("..", "..", "app_shared", ...)
+}
+
+source(statsapps_shared_file("app_settings.R"), local = TRUE)
+
 distribution_choices <- c(
   "Binomial" = "binomial",
   "Chi-squared" = "chisq",
@@ -166,7 +178,9 @@ x_axis_label <- function(distribution, params) {
     uniform = as.expression(bquote(x)),
     poisson = as.expression(bquote(x~"(count)")),
     binomial = as.expression(bquote(x~"(number of successes)")),
-    chisq = as.expression(bquote(chi^2[.(params$df)])),
+    chisq = as.expression(
+      bquote(chi^2~.(paste0("(df = ", format_number(params$df), ")")))
+    ),
     f = as.expression(
       bquote(F[list(.(params$df_group), .(params$df_error))])
     )
@@ -181,7 +195,11 @@ x_axis_label_code <- function(distribution, params) {
     uniform = "expression(x)",
     poisson = "expression(x~\"(count)\")",
     binomial = "expression(x~\"(number of successes)\")",
-    chisq = paste0("expression(chi^2[", format_number(params$df), "])"),
+    chisq = paste0(
+      "expression(chi^2~\"(df = ",
+      format_number(params$df),
+      ")\")"
+    ),
     f = paste0(
       "expression(F[list(",
       format_number(params$df_group), ", ",
@@ -512,7 +530,8 @@ make_plot_code <- function(distribution, params) {
       "ggplot(plot_data, aes(x = x, y = density)) +\n",
       "  geom_area(alpha = 0.2) +\n",
       "  geom_line(linewidth = 1.2) +\n",
-      "  labs(x = expression(t[", format_number(params$df), "]), y = \"Density\") +\n",
+      "  labs(x = ", x_axis_label_code(distribution, params),
+      ", y = \"Density\") +\n",
       "  theme_classic()"
     ),
     uniform = paste0(
@@ -584,7 +603,8 @@ make_plot_code <- function(distribution, params) {
       "ggplot(plot_data, aes(x = x, y = density)) +\n",
       "  geom_area(alpha = 0.2) +\n",
       "  geom_line(linewidth = 1.2) +\n",
-      "  labs(x = expression(chi[", format_number(params$df), "]^2), y = \"Density\") +\n",
+      " labs(x = ", x_axis_label_code(distribution, params),
+      ", y = \"Density\") +\n",
       "  theme_classic()"
     ),
     f = paste0(
@@ -601,10 +621,8 @@ make_plot_code <- function(distribution, params) {
       "ggplot(plot_data, aes(x = x, y = density)) +\n",
       "  geom_area(alpha = 0.2) +\n",
       "  geom_line(linewidth = 1.2) +\n",
-      "  labs(x = expression(F[",
-      format_number(params$df_group), ",",
-      format_number(params$df_error),
-      "]), y = \"Density\") +\n",
+      "  labs(x = ", x_axis_label_code(distribution, params),
+      ", y = \"Density\") +\n",
       "  theme_classic()"
     )
   )
@@ -612,25 +630,14 @@ make_plot_code <- function(distribution, params) {
 
 ui <- shiny::fluidPage(
   shiny::tags$head(
+    shiny::includeCSS(statsapps_shared_file("statsapps.css")),
     shiny::tags$style(shiny::HTML("
-      .app-title {
-        color: #315f96;
-        font-size: 38px;
-        font-weight: 400;
-        margin-bottom: 8px;
-      }
 
       .distribution-subtitle {
         font-size: 30px;
         color: #315f96;
         margin-top: 24px;
         margin-bottom: 12px;
-      }
-
-      .control-note {
-        font-size: 16px;
-        line-height: 1.35;
-        margin-bottom: 18px;
       }
 
       .code-grid {
@@ -652,33 +659,14 @@ ui <- shiny::fluidPage(
       }
 
       .code-cell pre {
-        font-size: 13px;
         white-space: pre-wrap;
         word-break: normal;
-      }
-
-      .footer-note {
-        color: #555555;
-        font-size: 14px;
-        line-height: 1.35;
-        margin-top: 18px;
-        padding: 12px 8px 18px 8px;
-        border-top: 1px solid #e5e5e5;
-        width: 100%;
       }
 
       @media (max-width: 1100px) {
         .code-grid {
           grid-template-columns: 1fr;
         }
-      }
-
-      .plot-note,
-      .code-note {
-        font-size: 15px;
-        line-height: 1.4;
-        margin-top: 0;
-        margin-bottom: 10px;
       }
 
       .equation-box {
@@ -974,7 +962,7 @@ server <- function(input, output, session) {
           x = x_label,
           y = "Density"
         ) +
-        ggplot2::theme_classic(base_size = 15) +
+        statsapps_plot_theme() +
         ggplot2::theme(
           axis.title = ggplot2::element_text(face = "bold"),
           axis.text = ggplot2::element_text(color = "#222222")
@@ -998,7 +986,7 @@ server <- function(input, output, session) {
           x = x_label,
           y = "Probability"
         ) +
-        ggplot2::theme_classic(base_size = 15) +
+        statsapps_plot_theme() +
         ggplot2::theme(
           axis.title = ggplot2::element_text(face = "bold"),
           axis.text = ggplot2::element_text(color = "#222222")

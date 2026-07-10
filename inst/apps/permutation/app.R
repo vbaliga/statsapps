@@ -80,9 +80,22 @@ make_slide_table <- function(data, group_name) {
     )
 }
 
+statsapps_shared_file <- function(...) {
+  installed_file <- system.file("app_shared", ..., package = "statsapps")
+
+  if (nzchar(installed_file)) {
+    return(installed_file)
+  }
+
+  file.path("..", "..", "app_shared", ...)
+}
+
+source(statsapps_shared_file("app_settings.R"), local = TRUE)
+
 ui <- shiny::fluidPage(
 
   shiny::tags$head(
+    shiny::includeCSS(statsapps_shared_file("statsapps.css")),
     shiny::tags$style(shiny::HTML("
       body {
         font-size: 16px;
@@ -92,13 +105,6 @@ ui <- shiny::fluidPage(
 
       .container-fluid {
         max-width: 1450px;
-      }
-
-      .app-title {
-        color: #315f96;
-        font-size: 38px;
-        font-weight: 400;
-        margin-bottom: 8px;
       }
 
       .explanation-box {
@@ -128,16 +134,6 @@ ui <- shiny::fluidPage(
         font-size: 14px;
       }
 
-      .footer-note {
-        color: #555555;
-        font-size: 14px;
-        line-height: 1.35;
-        margin-top: 18px;
-        padding: 12px 8px 18px 8px;
-        border-top: 1px solid #e5e5e5;
-        width: 100%;
-      }
-
       .current-progress-text {
         font-size: 13px;
         line-height: 1.35;
@@ -158,6 +154,14 @@ ui <- shiny::fluidPage(
         color: #222222;
         margin-top: 18px;
         margin-bottom: 12px;
+        text-align: left;
+      }
+
+      .observed-equation {
+        font-size: 20px;
+        color: #222222;
+        margin-top: 8px;
+        margin-bottom: 6px;
         text-align: left;
       }
 
@@ -395,7 +399,7 @@ ui <- shiny::fluidPage(
   shiny::div(
     class = "explanation-box",
     shiny::tags$div(
-      class = "equation-large",
+      class = "observed-equation",
       shiny::HTML(
         paste0(
           "Observed: Ȳ<sub>starved</sub> − Ȳ<sub>fed</sub> = ",
@@ -731,7 +735,7 @@ server <- function(input, output, session) {
         x = "Time to mating (hours)",
         y = "Frequency"
       ) +
-      ggplot2::theme_classic(base_size = 18) +
+      statsapps_plot_theme(base_size = 18) +
       ggplot2::theme(
         strip.background = ggplot2::element_blank(),
         strip.text = ggplot2::element_text(
@@ -903,7 +907,7 @@ server <- function(input, output, session) {
         x = "Difference in treatment means\nfrom randomized data (hours)",
         y = "Frequency"
       ) +
-      ggplot2::theme_classic(base_size = 20) +
+      statsapps_plot_theme(base_size = 20) +
       ggplot2::theme(
         axis.title = ggplot2::element_text(face = "bold"),
         # axis.title.x = element_text(

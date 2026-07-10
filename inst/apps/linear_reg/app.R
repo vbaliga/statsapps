@@ -48,39 +48,22 @@ calculate_ssr <- function(data, intercept, slope, log_x, log_y) {
   sum(residual^2)
 }
 
+statsapps_shared_file <- function(...) {
+  installed_file <- system.file("app_shared", ..., package = "statsapps")
+
+  if (nzchar(installed_file)) {
+    return(installed_file)
+  }
+
+  file.path("..", "..", "app_shared", ...)
+}
+
+source(statsapps_shared_file("app_settings.R"), local = TRUE)
+
 ui <- shiny::fluidPage(
   shiny::tags$head(
+    shiny::includeCSS(statsapps_shared_file("statsapps.css")),
     shiny::tags$style(shiny::HTML("
-      .app-title {
-        color: #315f96;
-        font-size: 38px;
-        font-weight: 400;
-        margin-bottom: 8px;
-      }
-
-      .regression-subtitle {
-        font-size: 30px;
-        color: #315f96;
-        margin-top: 24px;
-        margin-bottom: 12px;
-      }
-
-      .control-note {
-        font-size: 16px;
-        line-height: 1.35;
-        margin-bottom: 18px;
-      }
-
-      .footer-note {
-        color: #555555;
-        font-size: 14px;
-        line-height: 1.35;
-        margin-top: 18px;
-        padding: 12px 8px 18px 8px;
-        border-top: 1px solid #e5e5e5;
-        width: 100%;
-      }
-
       .lower-plot-grid {
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -93,7 +76,7 @@ ui <- shiny::fluidPage(
         min-width: 0;
       }
 
-      .plot-cell .regression-subtitle {
+      .plot-cell .app-subtitle {
         margin-top: 18px;
       }
 
@@ -115,7 +98,7 @@ ui <- shiny::fluidPage(
         min-width: 0;
       }
 
-      .plot-cell .regression-subtitle {
+      .plot-cell .app-subtitle {
         margin-top: 18px;
       }
 
@@ -131,21 +114,11 @@ ui <- shiny::fluidPage(
         height: 390px;
       }
 
-      .ssr-note {
-        font-size: 15px;
-        line-height: 1.4;
-        margin-top: 0;
-        margin-bottom: 10px;
-      }
-
       .ssr-plot-wrap {
         margin-top: auto;
       }
 
       .residual-mean-note {
-        font-size: 15px;
-        line-height: 1.35;
-        margin-top: 0;
         margin-bottom: 8px;
       }
 
@@ -190,12 +163,6 @@ ui <- shiny::fluidPage(
         word-break: normal;
       }
 
-      .data-note {
-        font-size: 15px;
-        line-height: 1.4;
-        margin-top: 0;
-        margin-bottom: 10px;
-      }
     "))
   ),
 
@@ -214,7 +181,8 @@ ui <- shiny::fluidPage(
         class = "control-note",
         "Try to find values for the intercept and slope that minimize the
         residual error from the linear model. Consider whether it would help
-        to log transform either variable (or both)."
+        to log transform either variable (or both). Hit 'Show solution' when
+        you think you have found the best values for parameters."
       ),
 
       shiny::sliderInput(
@@ -275,12 +243,12 @@ ui <- shiny::fluidPage(
         shiny::div(
           class = "plot-cell",
           shiny::div(
-            class = "regression-subtitle",
+            class = "app-subtitle",
             "Data and fitted linear model"
           ),
           shiny::tags$p(
-            class = "data-note",
-            "The line shows your current attempt, based on the values of the
+            class = "plot-note",
+            "The line is your current attempt, based on the values of the
             intercept and slope sliders. Red vertical lines show residuals: the
             differences between observed Y-values (black dots) and values
             predicted by the line."
@@ -291,54 +259,53 @@ ui <- shiny::fluidPage(
         shiny::div(
           class = "plot-cell ssr-cell",
           shiny::div(
-            class = "regression-subtitle ssr-title",
-            "SS",
-            shiny::tags$sub("residual")
-          ),
-
-          shiny::tags$p(
-            class = "ssr-note",
-            "In the plot below, the X marks the sum of squares of the residuals (",
-            "SS",
-            shiny::tags$sub("residual"),
-            ") for your current attempt."
-          ),
-
-          shiny::div(
-            class = "ssr-formula",
+            class = "app-subtitle ssr-title",
             shiny::HTML(
               "SS<sub>residual</sub> = &sum;<sub>i</sub> (Y<sub>i</sub> &minus; &#374;<sub>i</sub>)<sup>2</sup>"
             )
+            # "SS",
+            # shiny::tags$sub("residual")
           ),
+
           shiny::tags$p(
-            class = "ssr-note",
-            "The open green circle marks the smallest sum of squares possible
-            for the variables as they are currently used (i.e., after any log
+            class = "plot-note",
+            "In the plot below, the X marks the sum of squares of the residuals (",
+            "SS",
+            shiny::tags$sub("residual"),
+            ") for your current attempt. The open green circle marks the smallest",
+            "SS",
+            shiny::tags$sub("residual"),
+            "for the variables as they are currently used (i.e., after any log
             transformations you selected)."
-          ),
-          shiny::tags$p(
-            class = "ssr-note",
-            "As you adjust intercept and slope values, try to get the X as
-            close as possible to the circle. That said, even if you minimize ",
-            "SS",
-            shiny::tags$sub("residual"),
-            ", you should still check the residual plots below. Minimizing the
-            value of ",
-            "SS",
-            shiny::tags$sub("residual"),
-            "does not guarantee that the regression model is
-            appropriate!"
           ),
           shiny::div(
             class = "ssr-plot-wrap",
             shiny::plotOutput("ssr_plot", height = "125px")
+          ),
+          # shiny::div(
+          #   class = "ssr-formula",
+          #   shiny::HTML(
+          #     "SS<sub>residual</sub> = &sum;<sub>i</sub> (Y<sub>i</sub> &minus; &#374;<sub>i</sub>)<sup>2</sup>"
+          #   )
+          # ),
+          shiny::tags$p(
+            class = "plot-note",
+            "As you adjust intercept and slope values, try to get the X as
+            close as possible to the circle. That said, even if you minimize ",
+            "SS",
+            shiny::tags$sub("residual"),
+            ", check the residual plots below. Minimizing the value of ",
+            "SS",
+            shiny::tags$sub("residual"),
+            "does not guarantee that the regression model is
+            appropriate!"
           )
         ),
 
         shiny::div(
           class = "plot-cell",
           shiny::div(
-            class = "regression-subtitle",
+            class = "app-subtitle",
             "Residual plot"
           ),
           shiny::plotOutput("residual_plot", height = "300px")
@@ -347,7 +314,7 @@ ui <- shiny::fluidPage(
         shiny::div(
           class = "plot-cell",
           shiny::div(
-            class = "regression-subtitle",
+            class = "app-subtitle",
             "Distribution of residuals"
           ),
           shiny::uiOutput("residual_mean_text"),
@@ -567,7 +534,7 @@ server <- function(input, output, session) {
         x = labels$x,
         y = labels$y
       ) +
-      ggplot2::theme_classic(base_size = 15) +
+      statsapps_plot_theme() +
       ggplot2::theme(
         axis.title = ggplot2::element_text(face = "bold"),
         axis.text = ggplot2::element_text(color = "#222222")
@@ -610,7 +577,7 @@ server <- function(input, output, session) {
         x = "Sum of squares of residuals",
         y = NULL
       ) +
-      ggplot2::theme_classic(base_size = 15) +
+      statsapps_plot_theme() +
       ggplot2::theme(
         axis.line.y = ggplot2::element_blank(),
         axis.ticks.y = ggplot2::element_blank(),
@@ -646,7 +613,7 @@ server <- function(input, output, session) {
         x = labels$x,
         y = "Residual"
       ) +
-      ggplot2::theme_classic(base_size = 15) +
+      statsapps_plot_theme() +
       ggplot2::theme(
         axis.title = ggplot2::element_text(face = "bold"),
         axis.text = ggplot2::element_text(color = "#222222")
@@ -657,7 +624,7 @@ server <- function(input, output, session) {
     residual_mean <- mean(displayed_data()$residual)
 
     shiny::tags$p(
-      class = "residual-mean-note",
+      class = "plot-note residual-mean-note",
       shiny::HTML(
         paste0(
           "Mean value of these residuals: <strong>",
@@ -703,7 +670,7 @@ server <- function(input, output, session) {
         x = "Residual",
         y = "Density"
       ) +
-      ggplot2::theme_classic(base_size = 15) +
+      statsapps_plot_theme() +
       ggplot2::theme(
         axis.title = ggplot2::element_text(face = "bold"),
         axis.text = ggplot2::element_text(color = "#222222")

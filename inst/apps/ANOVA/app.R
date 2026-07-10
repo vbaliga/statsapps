@@ -1,34 +1,24 @@
+statsapps_shared_file <- function(...) {
+  installed_file <- system.file("app_shared", ..., package = "statsapps")
+
+  if (nzchar(installed_file)) {
+    return(installed_file)
+  }
+
+  file.path("..", "..", "app_shared", ...)
+}
+
+source(statsapps_shared_file("app_settings.R"), local = TRUE)
+
 group_colors <- c("firebrick", "goldenrod1", "#265AAE")
 
 ui <- shiny::fluidPage(
   shiny::tags$head(
+    shiny::includeCSS(statsapps_shared_file("statsapps.css")),
     shiny::tags$style(shiny::HTML("
-      .app-title {
-        color: #315f96;
-        font-size: 38px;
-        font-weight: 400;
-        margin-bottom: 8px;
-      }
-
-      .anova-subtitle {
-        font-size: 30px;
-        color: #315f96;
-        margin-top: 24px;
-        margin-bottom: 12px;
-      }
 
       .boxplot-wrapper {
         margin-bottom: 14px;
-      }
-
-      .footer-note {
-        color: #555555;
-        font-size: 14px;
-        line-height: 1.35;
-        margin-top: 18px;
-        padding: 12px 8px 18px 8px;
-        border-top: 1px solid #e5e5e5;
-        width: 100%;
       }
 
     "))
@@ -44,6 +34,7 @@ ui <- shiny::fluidPage(
   shiny::sidebarLayout(
     shiny::sidebarPanel(
       shiny::tags$p(
+        class = "control-note",
         "Use the sliders below to adjust population parameters or sample sizes.
         An ANOVA will be run automatically whenever a slider is moved.
         The button at the bottom can also simulate new data using the same
@@ -106,7 +97,7 @@ ui <- shiny::fluidPage(
       ),
 
       shiny::div(
-        class = "anova-subtitle",
+        class = "app-subtitle",
         "Analysis of Variance"
       ),
 
@@ -175,7 +166,7 @@ server <- function(input, output, session) {
         x = NULL,
         y = "Value"
       ) +
-      ggplot2::theme_classic(base_size = 16)
+      statsapps_plot_theme()
   })
 
   output$anova_decomposition <- shiny::renderUI({
