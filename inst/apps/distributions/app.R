@@ -118,9 +118,8 @@ distribution_formula <- function(distribution) {
       "{\\mathrm{Expected}_i}",
       "\\]",
       "\\[",
-      "f(x) = ",
-      "\\frac{1}{2^{\\mathrm{df}/2}\\Gamma(\\mathrm{df}/2)}",
-      "x^{\\mathrm{df}/2 - 1}e^{-x/2}, \\quad x \\ge 0",
+      "\\Pr(\\chi^2 \\ge x) \\text{ is the right-tail area under the } ",
+      "\\chi^2_{\\mathrm{df}} \\text{ distribution.}",
       "\\]"
     ),
     f = paste0(
@@ -745,9 +744,9 @@ ui <- shiny::fluidPage(
 
       shiny::tags$p(
         class = "code-note",
-        "The first code block simulates random values from the selected
-        distribution. The second code block evaluates the theoretical
-        distribution and plots it with ggplot2."
+        "The first code block simulates random observations from the chosen
+        probability distribution and the parameter values you have specified.
+        The second block provides code to plot the distribution with ggplot2."
       ),
 
       shiny::div(

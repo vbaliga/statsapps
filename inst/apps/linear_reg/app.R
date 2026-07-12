@@ -48,6 +48,15 @@ calculate_ssr <- function(data, intercept, slope, log_x, log_y) {
   sum(residual^2)
 }
 
+make_feedback_box <- function(type, label, text) {
+  shiny::div(
+    class = paste("feedback-box", paste0("feedback-", type)),
+    shiny::span(class = "feedback-label", label),
+    " ",
+    text
+  )
+}
+
 statsapps_shared_file <- function(...) {
   installed_file <- system.file("app_shared", ..., package = "statsapps")
 
@@ -111,15 +120,44 @@ ui <- shiny::fluidPage(
       .ssr-cell {
         display: flex;
         flex-direction: column;
-        height: 390px;
       }
 
       .ssr-plot-wrap {
-        margin-top: auto;
+        margin-top: 8px;
+        margin-bottom: 8px;
       }
 
       .residual-mean-note {
         margin-bottom: 8px;
+      }
+
+      .feedback-box {
+        border-left: 4px solid #cccccc;
+        border-radius: 4px;
+        padding: 8px 10px;
+        margin-top: 8px;
+        margin-bottom: 12px;
+        font-size: 15px;
+        line-height: 1.35;
+      }
+
+      .feedback-good {
+        border-left-color: #2E7D32;
+        background-color: #F1F8F3;
+      }
+
+      .feedback-neutral {
+        border-left-color: #A36A00;
+        background-color: #FFF8E8;
+      }
+
+      .feedback-warn {
+        border-left-color: #B3261E;
+        background-color: #FFF2F0;
+      }
+
+      .feedback-label {
+        font-weight: 700;
       }
 
       .ssr-title sub {
@@ -246,14 +284,11 @@ ui <- shiny::fluidPage(
             class = "app-subtitle",
             "Data and fitted linear model"
           ),
+          shiny::plotOutput("regression_plot", height = "390px"),
           shiny::tags$p(
             class = "plot-note",
-            "The line is your current attempt, based on the values of the
-            intercept and slope sliders. Red vertical lines show residuals: the
-            differences between observed Y-values (black dots) and values
-            predicted by the line."
-          ),
-          shiny::plotOutput("regression_plot", height = "390px")
+            "The line is your current attempt. Red vertical lines show residuals."
+          )
         ),
 
         shiny::div(
@@ -267,39 +302,43 @@ ui <- shiny::fluidPage(
             # shiny::tags$sub("residual")
           ),
 
-          shiny::tags$p(
-            class = "plot-note",
-            "In the plot below, the X marks the sum of squares of the residuals (",
-            "SS",
-            shiny::tags$sub("residual"),
-            ") for your current attempt. The open green circle marks the smallest",
-            "SS",
-            shiny::tags$sub("residual"),
-            "for the variables as they are currently used (i.e., after any log
-            transformations you selected)."
-          ),
           shiny::div(
             class = "ssr-plot-wrap",
-            shiny::plotOutput("ssr_plot", height = "125px")
+            shiny::plotOutput("ssr_plot", height = "230px")
           ),
+          # shiny::tags$p(
+          #   class = "plot-note",
+          #   "The X marks the sum of squares of the residuals (",
+          #   "SS",
+          #   shiny::tags$sub("residual"),
+          #   ") for your current attempt. The open circle marks the smallest",
+          #   "SS",
+          #   shiny::tags$sub("residual"),
+          #   "for these data. Try to get the X as
+          #   close as possible to the circle."
+          # ),
+          shiny::tags$p(
+            class = "plot-note",
+            "Try to get the X close as possible to the open circle."
+          ),
+          shiny::uiOutput("ssr_feedback")
           # shiny::div(
           #   class = "ssr-formula",
           #   shiny::HTML(
           #     "SS<sub>residual</sub> = &sum;<sub>i</sub> (Y<sub>i</sub> &minus; &#374;<sub>i</sub>)<sup>2</sup>"
           #   )
           # ),
-          shiny::tags$p(
-            class = "plot-note",
-            "As you adjust intercept and slope values, try to get the X as
-            close as possible to the circle. That said, even if you minimize ",
-            "SS",
-            shiny::tags$sub("residual"),
-            ", check the residual plots below. Minimizing the value of ",
-            "SS",
-            shiny::tags$sub("residual"),
-            "does not guarantee that the regression model is
-            appropriate!"
-          )
+          # shiny::tags$p(
+          #   class = "plot-note",
+          #   " Even if you minimize ",
+          #   "SS",
+          #   shiny::tags$sub("residual"),
+          #   ", check the residual plots below. Minimizing the value of ",
+          #   "SS",
+          #   shiny::tags$sub("residual"),
+          #   "does not guarantee that the regression model is
+          #   appropriate!"
+          # )
         ),
 
         shiny::div(
@@ -308,7 +347,8 @@ ui <- shiny::fluidPage(
             class = "app-subtitle",
             "Residual plot"
           ),
-          shiny::plotOutput("residual_plot", height = "300px")
+          shiny::plotOutput("residual_plot", height = "300px"),
+          shiny::uiOutput("residual_pattern_feedback")
         ),
 
         shiny::div(
@@ -318,7 +358,8 @@ ui <- shiny::fluidPage(
             "Distribution of residuals"
           ),
           shiny::uiOutput("residual_mean_text"),
-          shiny::plotOutput("residual_distribution", height = "300px")
+          shiny::plotOutput("residual_distribution", height = "300px"),
+          shiny::uiOutput("residual_mean_feedback")
         )
       )
     )
@@ -454,6 +495,44 @@ server <- function(input, output, session) {
     sum(stats::residuals(fit)^2)
   })
 
+  ssr_relative_gap <- shiny::reactive({
+    gap <- max(current_ssr() - target_ssr(), 0)
+
+    if (target_ssr() <= .Machine$double.eps) {
+      return(gap)
+    }
+
+    gap / target_ssr()
+  })
+
+  residual_mean_value <- shiny::reactive({
+    mean(displayed_data()$residual)
+  })
+
+  residual_mean_scaled <- shiny::reactive({
+    data <- displayed_data()
+    denominator <- stats::sd(data$y_display)
+
+    if (!is.finite(denominator) || denominator <= .Machine$double.eps) {
+      return(abs(residual_mean_value()))
+    }
+
+    abs(residual_mean_value()) / denominator
+  })
+
+  residual_x_correlation <- shiny::reactive({
+    data <- displayed_data()
+
+    if (
+      stats::sd(data$x_display) <= .Machine$double.eps ||
+      stats::sd(data$residual) <= .Machine$double.eps
+    ) {
+      return(0)
+    }
+
+    stats::cor(data$x_display, data$residual)
+  })
+
   ssr_axis_max <- shiny::reactive({
     ssr_combinations <- expand.grid(
       intercept = intercept_range,
@@ -542,54 +621,106 @@ server <- function(input, output, session) {
   })
 
   output$ssr_plot <- shiny::renderPlot({
+    current_val <- current_ssr()
+    target_val <- target_ssr()
+
     plot_data <- data.frame(
-      ssr = c(current_ssr(), target_ssr()),
-      y = c(0.28, 0.28),
-      marker = c("Current", "Target")
+      x = c(0.08, 0.08),
+      ssr = c(current_val, target_val),
+      marker = c("Current", "Target"),
+      label = c("Current attempt", "Minimum")
     )
 
-    ggplot2::ggplot(plot_data, ggplot2::aes(x = ssr, y = y)) +
+    ggplot2::ggplot(plot_data, ggplot2::aes(x = x, y = ssr)) +
       ggplot2::geom_point(
         data = subset(plot_data, marker == "Target"),
         shape = 1,
         size = 6,
         stroke = 2,
-        color = "forestgreen"
+        color = "#222222"
       ) +
       ggplot2::geom_point(
         data = subset(plot_data, marker == "Current"),
         shape = 4,
         size = 6,
         stroke = 2,
-        color = "#222222"
+        color = "#c92514"
+      ) +
+      ggplot2::geom_text(
+        ggplot2::aes(
+          x = 0.18,
+          label = label,
+          color = marker
+        ),
+        hjust = 0,
+        size = 4.5,
+        show.legend = FALSE
+      ) +
+      ggplot2::scale_color_manual(
+        values = c(
+          "Current" = "#c92514",
+          "Target" = "#222222"
+        )
       ) +
       ggplot2::scale_x_continuous(
-        limits = c(0, ssr_axis_max()),
-        breaks = pretty(c(0, ssr_axis_max()), n = 5),
-        expand = ggplot2::expansion(mult = c(0.03, 0.03))
-      ) +
-      ggplot2::scale_y_continuous(
         limits = c(0, 1),
         breaks = NULL,
         expand = c(0, 0)
       ) +
-      ggplot2::labs(
-        x = "Sum of squares of residuals",
-        y = NULL
+      ggplot2::scale_y_continuous(
+        limits = c(0, ssr_axis_max()),
+        breaks = pretty(c(0, ssr_axis_max()), n = 5),
+        expand = ggplot2::expansion(mult = c(0.08, 0.10))
       ) +
+      ggplot2::labs(
+        x = NULL,
+        y = expression(SS[residual])
+      ) +
+      ggplot2::coord_cartesian(clip = "off") +
       statsapps_plot_theme() +
       ggplot2::theme(
-        axis.line.y = ggplot2::element_blank(),
-        axis.ticks.y = ggplot2::element_blank(),
-        axis.text.y = ggplot2::element_blank(),
-        axis.title.y = ggplot2::element_blank(),
-        axis.title.x = ggplot2::element_text(
+        axis.line.x = ggplot2::element_blank(),
+        axis.ticks.x = ggplot2::element_blank(),
+        axis.text.x = ggplot2::element_blank(),
+        axis.title.x = ggplot2::element_blank(),
+        axis.title.y = ggplot2::element_text(
+          angle = 90,
           face = "bold",
-          margin = ggplot2::margin(t = 10)
+          margin = ggplot2::margin(r = 10)
         ),
-        axis.text.x = ggplot2::element_text(color = "#222222"),
-        plot.margin = ggplot2::margin(8, 16, 20, 16)
+        axis.text.y = ggplot2::element_text(color = "#222222"),
+        plot.margin = ggplot2::margin(12, 70, 24, 20)
       )
+  })
+
+  output$ssr_feedback <- shiny::renderUI({
+    gap <- ssr_relative_gap()
+
+    if (gap <= 0.001) {
+      make_feedback_box(
+        type = "good",
+        label = "Excellent:",
+        text = "SS residual is minimized for the variables as currently plotted."
+      )
+    } else if (gap <= 0.02) {
+      make_feedback_box(
+        type = "good",
+        label = "Very close:",
+        text = "Your SS residual is very close to the minimum possible value."
+      )
+    } else if (gap <= 0.15) {
+      make_feedback_box(
+        type = "neutral",
+        label = "Getting closer:",
+        text = "Your line is approaching the minimum SS residual, but it can still improve."
+      )
+    } else {
+      make_feedback_box(
+        type = "warn",
+        label = "Keep adjusting:",
+        text = "Your current line is still far from the minimum SS residual."
+      )
+    }
   })
 
   output$residual_plot <- shiny::renderPlot({
@@ -620,8 +751,39 @@ server <- function(input, output, session) {
       )
   })
 
+  output$residual_pattern_feedback <- shiny::renderUI({
+    residual_correlation <- residual_x_correlation()
+    abs_correlation <- abs(residual_correlation)
+
+    if (abs_correlation <= 0.05) {
+      make_feedback_box(
+        type = "good",
+        label = "Good sign:",
+        text = "The residuals show very little remaining linear association with X."
+      )
+    } else if (abs_correlation <= 0.20) {
+      make_feedback_box(
+        type = "neutral",
+        label = "Possible pattern:",
+        text = "The residuals show a small remaining trend with X."
+      )
+    } else if (residual_correlation > 0) {
+      make_feedback_box(
+        type = "warn",
+        label = "Pattern detected:",
+        text = "Residuals tend to increase with X, suggesting the fitted line is still missing structure."
+      )
+    } else {
+      make_feedback_box(
+        type = "warn",
+        label = "Pattern detected:",
+        text = "Residuals tend to decrease with X, suggesting the fitted line is still missing structure."
+      )
+    }
+  })
+
   output$residual_mean_text <- shiny::renderUI({
-    residual_mean <- mean(displayed_data()$residual)
+    residual_mean <- residual_mean_value()
 
     shiny::tags$p(
       class = "plot-note residual-mean-note",
@@ -633,6 +795,37 @@ server <- function(input, output, session) {
         )
       )
     )
+  })
+
+  output$residual_mean_feedback <- shiny::renderUI({
+    residual_mean <- residual_mean_value()
+    scaled_mean <- residual_mean_scaled()
+
+    if (scaled_mean <= 0.01) {
+      make_feedback_box(
+        type = "good",
+        label = "Excellent:",
+        text = "The mean residual is essentially 0."
+      )
+    } else if (scaled_mean <= 0.05) {
+      make_feedback_box(
+        type = "neutral",
+        label = "Close:",
+        text = "The mean residual is fairly close to 0."
+      )
+    } else if (residual_mean > 0) {
+      make_feedback_box(
+        type = "warn",
+        label = "Check the fit:",
+        text = "The mean residual is positive, so the line is underpredicting on average."
+      )
+    } else {
+      make_feedback_box(
+        type = "warn",
+        label = "Check the fit:",
+        text = "The mean residual is negative, so the line is overpredicting on average."
+      )
+    }
   })
 
   output$residual_distribution <- shiny::renderPlot({
