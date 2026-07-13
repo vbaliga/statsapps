@@ -2,6 +2,11 @@
 
 ## statsapps (development version)
 
+### 2026-07-13 (0.0.4.9000)
+
+- Round out edits to linear regression app
+- Introduce expanded testing, including app internals for 2 apps
+
 ### 2026-07-10 (0.0.3.9000)
 
 - Centralize shared app styling and ggplot theme settings.
