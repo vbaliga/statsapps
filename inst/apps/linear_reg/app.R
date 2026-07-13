@@ -120,6 +120,7 @@ ui <- shiny::fluidPage(
       .ssr-cell {
         display: flex;
         flex-direction: column;
+        align-self: end;
       }
 
       .ssr-plot-wrap {
@@ -291,7 +292,7 @@ ui <- shiny::fluidPage(
             class = "plot-note",
             "The black line is your current linear model.
             Red vertical lines show residuals. The other 3 panels on this
-            page show further information about how well the linear model fits the data."
+            app show further info on how well the linear model fits the data."
           )
         ),
 
@@ -764,7 +765,9 @@ server <- function(input, output, session) {
       make_feedback_box(
         type = "good",
         label = "Good sign:",
-        text = "The residuals show very little remaining linear association with X."
+        text = "The residuals show little correlation with X. Ensure that the
+        spread of points above and below the line is similar across the range
+        of X."
       )
     } else if (abs_correlation <= 0.20) {
       make_feedback_box(
@@ -795,7 +798,7 @@ server <- function(input, output, session) {
       make_feedback_box(
         type = "good",
         label = "Excellent:",
-        text = "The mean residual is essentially 0. Ensure that the "
+        text = "The mean residual is essentially 0."
       )
     } else if (scaled_mean <= 0.05) {
       make_feedback_box(
