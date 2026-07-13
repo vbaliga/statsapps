@@ -107,6 +107,68 @@ restore_random_seed <- function(saved_seed) {
   invisible(NULL)
 }
 
+generate_data_from_model <- function(
+    data_seed,
+    intercept,
+    slope,
+    residual_sd,
+    log_x_model,
+    log_y_model
+) {
+  saved_seed <- preserve_random_seed()
+  on.exit(restore_random_seed(saved_seed), add = TRUE)
+
+  set.seed(data_seed)
+
+  n <- 100
+
+  x_log_true <- stats::runif(
+    n,
+    min = log(0.4),
+    max = log(4)
+  )
+
+  x <- exp(x_log_true)
+
+  x_model <- if (isTRUE(log_x_model)) {
+    log(x)
+  } else {
+    x
+  }
+
+  raw_error <- stats::rnorm(
+    n,
+    mean = 0,
+    sd = residual_sd
+  )
+
+  random_error <- stats::residuals(
+    stats::lm(raw_error ~ x_model)
+  )
+
+  random_error <- random_error / stats::sd(random_error) * residual_sd
+
+  y_model <- intercept + slope * x_model + random_error
+
+  y <- if (isTRUE(log_y_model)) {
+    exp(y_model)
+  } else {
+    y_model
+  }
+
+  if (!all(is.finite(y)) || !all(y > 0)) {
+    stop(
+      "Could not simulate a valid positive Y dataset.",
+      call. = FALSE
+    )
+  }
+
+  data.frame(
+    x = x,
+    y = y
+  )
+}
+
 simulate_linear_reg_data <- function(seed) {
   saved_seed <- preserve_random_seed()
   on.exit(restore_random_seed(saved_seed), add = TRUE)
@@ -119,45 +181,25 @@ simulate_linear_reg_data <- function(seed) {
   intercept <- sample(spec$intercept_values, size = 1)
   slope <- sample(spec$slope_values, size = 1)
 
-  n <- 100
-  x_log_true <- stats::runif(
-    n,
-    min = log(0.4),
-    max = log(4)
-  )
-
-  x <- exp(x_log_true)
-
-  x_model <- if (isTRUE(spec$solution_log_x)) {
-    x_log_true
-  } else {
-    x
-  }
-
   max_attempts <- 100
 
   for (attempt in seq_len(max_attempts)) {
-    raw_error <- stats::rnorm(
-      n = n,
-      mean = 0,
-      sd = spec$residual_sd
+    candidate_data_seed <- sample.int(1000000, size = 1)
+
+    data <- tryCatch(
+      generate_data_from_model(
+        data_seed = candidate_data_seed,
+        intercept = intercept,
+        slope = slope,
+        residual_sd = spec$residual_sd,
+        log_x_model = spec$solution_log_x,
+        log_y_model = spec$solution_log_y
+      ),
+      error = function(e) NULL
     )
 
-    random_error <- stats::residuals(
-      stats::lm(raw_error ~ x_model)
-    )
-
-    random_error <- random_error / stats::sd(random_error) * spec$residual_sd
-
-    y_model <- intercept + slope * x_model + random_error
-
-    y <- if (isTRUE(spec$solution_log_y)) {
-      exp(y_model)
-    } else {
-      y_model
-    }
-
-    if (all(is.finite(y)) && all(y > 0)) {
+    if (!is.null(data)) {
+      data_seed <- candidate_data_seed
       break
     }
 
@@ -169,14 +211,10 @@ simulate_linear_reg_data <- function(seed) {
     }
   }
 
-  data <- data.frame(
-    x = x,
-    y = y
-  )
-
   list(
     data = data,
     seed = seed,
+    data_seed = data_seed,
     relationship_id = relationship_id,
     relationship_label = spec$relationship_label,
     solution_log_x = spec$solution_log_x,
@@ -240,6 +278,60 @@ solution_formula_text <- function(simulation, include_error = FALSE) {
     } else {
       ""
     }
+  )
+}
+
+simulation_code_text <- function(simulation) {
+  x_model_line <- if (isTRUE(simulation$solution_log_x)) {
+    "x_model <- log(x)"
+  } else {
+    "x_model <- x"
+  }
+
+  y_line <- if (isTRUE(simulation$solution_log_y)) {
+    "y <- exp(y_model)"
+  } else {
+    "y <- y_model"
+  }
+
+  response_text <- if (isTRUE(simulation$solution_log_y)) {
+    "log(y)"
+  } else {
+    "y"
+  }
+
+  predictor_text <- if (isTRUE(simulation$solution_log_x)) {
+    "log(x)"
+  } else {
+    "x"
+  }
+
+  paste0(
+    "set.seed(", simulation$data_seed, ")\n\n",
+    "n <- 100\n",
+    "intercept <- ",
+    format_number(simulation$solution_intercept, digits = 2),
+    "\n",
+    "slope <- ",
+    format_number(simulation$solution_slope, digits = 2),
+    "\n",
+    "residual_sd <- ",
+    format_number(simulation$residual_sd, digits = 2),
+    "\n\n",
+    "x_log_true <- runif(n, min = log(0.4), max = log(4))\n",
+    "x <- exp(x_log_true)\n\n",
+    x_model_line, "\n\n",
+    "raw_error <- rnorm(n, mean = 0, sd = residual_sd)\n\n",
+    "random_error <- residuals(lm(raw_error ~ x_model))\n",
+    "random_error <- random_error / sd(random_error) * residual_sd\n\n",
+    "y_model <- intercept + slope * x_model + random_error\n",
+    y_line, "\n\n",
+    "linreg_data <- data.frame(x = x, y = y)\n\n",
+    "summary(lm(",
+    response_text,
+    " ~ ",
+    predictor_text,
+    ", data = linreg_data))"
   )
 }
 
@@ -406,10 +498,12 @@ ui <- shiny::fluidPage(
 
       shiny::tags$p(
         class = "control-note",
-        "The scatterplot shows data and a linear model that has parameters based on the sliders below.
-        Find values for the intercept and slope that minimize the residual error.
-        Consider whether it would help to log transform either variable (or both).
-        Hit 'Show solution' when you think you have found the best values for parameters."
+        "The scatterplot shows data and a linear model that
+        has parameters based on the sliders below. Find values for
+        the intercept and slope that minimize the residual error. Consider
+        whether it would help to log transform either variable (or both).
+        Hit 'Show solution' when you think you have found the best values for
+        parameters."
       ),
 
       shiny::sliderInput(
@@ -468,8 +562,8 @@ ui <- shiny::fluidPage(
           shiny::tags$p(
             class = "plot-note",
             "The black line is your current linear model.
-            Red vertical lines show residuals.
-            The other 3 panels on this app show further information about how well the linear model fits the data."
+            Red vertical lines show residuals. The other 3 plots show further
+            info on how well the linear model fits the data."
           )
         ),
 
@@ -655,15 +749,9 @@ server <- function(input, output, session) {
 
       shiny::div(
         class = "solution-box simulation-box",
-        shiny::tags$h4("How these data were simulated"),
+        shiny::tags$h4("R code used to simulate these data"),
         shiny::tags$pre(
-          paste0(
-            "set.seed(", simulation$seed, ")\n\n",
-            "# Generating relationship\n",
-            solution_formula_text(simulation, include_error = TRUE), "\n\n",
-            "residual_sd <- ",
-            format_number(simulation$residual_sd, digits = 2)
-          )
+          simulation_code_text(simulation)
         )
       )
     )
@@ -934,7 +1022,8 @@ server <- function(input, output, session) {
       make_feedback_box(
         type = "good",
         label = "Excellent:",
-        text = "SS residual is minimized for the variables as currently plotted."
+        text = "SS residual is minimized for the variables as currently
+        plotted."
       )
     } else if (gap <= 0.05) {
       make_feedback_box(
@@ -946,13 +1035,16 @@ server <- function(input, output, session) {
       make_feedback_box(
         type = "neutral",
         label = "Getting closer:",
-        text = "The SS residual is approaching its minimum possible value. Try reducing it further."
+        text = "The SS residual is approaching its minimum possible value.
+        Try reducing it further."
       )
     } else {
       make_feedback_box(
         type = "warn",
         label = "Keep adjusting:",
-        text = "The SS residual is far from its minimum possible value. Try to get the X as close as possible to the open circle."
+        text = "The SS residual is far from its minimum possible value.
+        Try to get the X close as possible to the open circle (its minimal value
+        for these data)."
       )
     }
   })
@@ -993,7 +1085,9 @@ server <- function(input, output, session) {
       make_feedback_box(
         type = "good",
         label = "Good sign:",
-        text = "The residuals show very little remaining linear association with X. Still check whether the residuals are spread roughly evenly above and below zero across the full range of X."
+        text = "The residuals show little correlation with X. Ensure that the
+        spread of points above and below the line is similar across the range
+        of X."
       )
     } else if (abs_correlation <= 0.20) {
       make_feedback_box(
@@ -1005,13 +1099,13 @@ server <- function(input, output, session) {
       make_feedback_box(
         type = "warn",
         label = "Pattern detected:",
-        text = "Residuals tend to increase with X, suggesting the fitted line is still missing structure."
+        text = "Residuals tend to increase with X."
       )
     } else {
       make_feedback_box(
         type = "warn",
         label = "Pattern detected:",
-        text = "Residuals tend to decrease with X, suggesting the fitted line is still missing structure."
+        text = "Residuals tend to decrease with X."
       )
     }
   })
@@ -1036,13 +1130,15 @@ server <- function(input, output, session) {
       make_feedback_box(
         type = "warn",
         label = "Check the fit:",
-        text = "The mean residual is positive, so the line is underpredicting on average."
+        text = "The mean residual is positive, so the line is underpredicting
+        on average."
       )
     } else {
       make_feedback_box(
         type = "warn",
         label = "Check the fit:",
-        text = "The mean residual is negative, so the line is overpredicting on average."
+        text = "The mean residual is negative, so the line is overpredicting
+        on average."
       )
     }
   })
