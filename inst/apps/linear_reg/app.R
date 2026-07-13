@@ -870,11 +870,15 @@ server <- function(input, output, session) {
 
   ssr_axis_max <- shiny::reactive({
     max_ssr <- max(
-      ssr_grid()$ssr,
-      current_ssr()
+      current_ssr(),
+      target_ssr()
     )
 
-    max(pretty(c(0, max_ssr * 1.08), n = 5))
+    if (!is.finite(max_ssr) || max_ssr <= 0) {
+      return(1)
+    }
+
+    max(pretty(c(0, max_ssr * 1.15), n = 5))
   })
 
   axis_labels <- shiny::reactive({
@@ -1085,9 +1089,9 @@ server <- function(input, output, session) {
       make_feedback_box(
         type = "good",
         label = "Good sign:",
-        text = "The residuals show little correlation with X. Ensure that the
-        spread of points above and below the line is similar across the range
-        of X."
+        text = "The residuals show little correlation with the explanatory
+        variable. Ensure that the spread of points above and below the line is
+        similar across the range of the x-axis."
       )
     } else if (abs_correlation <= 0.20) {
       make_feedback_box(
