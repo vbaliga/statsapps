@@ -1,33 +1,193 @@
-true_intercept <- 8
-true_slope <- 1.25
-residual_sd <- 0.6
-
 intercept_range <- c(-5, 12)
 slope_range <- c(-2, 4)
 
-set.seed(202607)
+intercept_step <- 0.25
+slope_step <- 0.25
 
-linear_reg_data <- data.frame(
-  x_log_true = stats::runif(100, min = -2, max = 2)
+default_intercept <- intercept_range[1]
+default_slope <- slope_range[1]
+
+slider_values <- function(range, step) {
+  round(seq(range[1], range[2], by = step), 10)
+}
+
+format_number <- function(x, digits = 2) {
+  formatC(x, format = "f", digits = digits)
+}
+
+format_signed_slope <- function(slope, variable_name) {
+  sign_text <- if (slope >= 0) {
+    " + "
+  } else {
+    " - "
+  }
+
+  paste0(
+    sign_text,
+    format_number(abs(slope), digits = 2),
+    " ",
+    variable_name
+  )
+}
+
+make_initial_seed <- function() {
+  seed <- as.integer((as.numeric(Sys.time()) * 1000) %% 1000000)
+
+  if (!is.finite(seed) || seed < 1) {
+    seed <- 202607
+  }
+
+  seed
+}
+
+relationship_specs <- list(
+  raw_linear = list(
+    solution_log_x = FALSE,
+    solution_log_y = FALSE,
+    relationship_label = "Y and X",
+    x_label = "X",
+    y_label = "Y",
+    intercept_values = seq(8, 12, by = intercept_step),
+    slope_values = c(-1.25, -1, -0.75, -0.5, 0.5, 0.75, 1, 1.25),
+    residual_sd = 0.6
+  ),
+  log_x = list(
+    solution_log_x = TRUE,
+    solution_log_y = FALSE,
+    relationship_label = "Y and log(X)",
+    x_label = "log(X)",
+    y_label = "Y",
+    intercept_values = seq(8, 12, by = intercept_step),
+    slope_values = c(-2, -1.5, -1, -0.75, 0.75, 1, 1.5, 2),
+    residual_sd = 0.6
+  ),
+  log_y = list(
+    solution_log_x = FALSE,
+    solution_log_y = TRUE,
+    relationship_label = "log(Y) and X",
+    x_label = "X",
+    y_label = "log(Y)",
+    intercept_values = seq(1.25, 2.5, by = intercept_step),
+    slope_values = c(-0.5, -0.25, 0.25, 0.5),
+    residual_sd = 0.25
+  ),
+  log_x_log_y = list(
+    solution_log_x = TRUE,
+    solution_log_y = TRUE,
+    relationship_label = "log(Y) and log(X)",
+    x_label = "log(X)",
+    y_label = "log(Y)",
+    intercept_values = seq(1.25, 2.5, by = intercept_step),
+    slope_values = c(-1, -0.75, -0.5, 0.5, 0.75, 1),
+    residual_sd = 0.25
+  )
 )
 
-linear_reg_data$x <- exp(linear_reg_data$x_log_true)
+preserve_random_seed <- function() {
+  if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+    list(
+      exists = TRUE,
+      value = get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+    )
+  } else {
+    list(
+      exists = FALSE,
+      value = NULL
+    )
+  }
+}
 
-raw_error <- stats::rnorm(
-  n = nrow(linear_reg_data),
-  mean = 0,
-  sd = residual_sd
-)
+restore_random_seed <- function(saved_seed) {
+  if (isTRUE(saved_seed$exists)) {
+    assign(".Random.seed", saved_seed$value, envir = .GlobalEnv)
+  } else if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+    rm(".Random.seed", envir = .GlobalEnv)
+  }
 
-random_error <- stats::residuals(
-  stats::lm(raw_error ~ linear_reg_data$x_log_true)
-)
+  invisible(NULL)
+}
 
-random_error <- random_error / stats::sd(random_error) * residual_sd
+simulate_linear_reg_data <- function(seed) {
+  saved_seed <- preserve_random_seed()
+  on.exit(restore_random_seed(saved_seed), add = TRUE)
 
-linear_reg_data$y <- true_intercept +
-  true_slope * linear_reg_data$x_log_true +
-  random_error
+  set.seed(seed)
+
+  relationship_id <- sample(names(relationship_specs), size = 1)
+  spec <- relationship_specs[[relationship_id]]
+
+  intercept <- sample(spec$intercept_values, size = 1)
+  slope <- sample(spec$slope_values, size = 1)
+
+  n <- 100
+  x_log_true <- stats::runif(
+    n,
+    min = log(0.4),
+    max = log(4)
+  )
+
+  x <- exp(x_log_true)
+
+  x_model <- if (isTRUE(spec$solution_log_x)) {
+    x_log_true
+  } else {
+    x
+  }
+
+  max_attempts <- 100
+
+  for (attempt in seq_len(max_attempts)) {
+    raw_error <- stats::rnorm(
+      n = n,
+      mean = 0,
+      sd = spec$residual_sd
+    )
+
+    random_error <- stats::residuals(
+      stats::lm(raw_error ~ x_model)
+    )
+
+    random_error <- random_error / stats::sd(random_error) * spec$residual_sd
+
+    y_model <- intercept + slope * x_model + random_error
+
+    y <- if (isTRUE(spec$solution_log_y)) {
+      exp(y_model)
+    } else {
+      y_model
+    }
+
+    if (all(is.finite(y)) && all(y > 0)) {
+      break
+    }
+
+    if (attempt == max_attempts) {
+      stop(
+        "Could not simulate a valid positive Y dataset.",
+        call. = FALSE
+      )
+    }
+  }
+
+  data <- data.frame(
+    x = x,
+    y = y
+  )
+
+  list(
+    data = data,
+    seed = seed,
+    relationship_id = relationship_id,
+    relationship_label = spec$relationship_label,
+    solution_log_x = spec$solution_log_x,
+    solution_log_y = spec$solution_log_y,
+    solution_intercept = intercept,
+    solution_slope = slope,
+    residual_sd = spec$residual_sd,
+    x_label = spec$x_label,
+    y_label = spec$y_label
+  )
+}
 
 calculate_ssr <- function(data, intercept, slope, log_x, log_y) {
   x_display <- if (isTRUE(log_x)) {
@@ -57,6 +217,32 @@ make_feedback_box <- function(type, label, text) {
   )
 }
 
+solution_formula_text <- function(simulation, include_error = FALSE) {
+  lhs <- if (isTRUE(simulation$solution_log_y)) {
+    "log(Y)"
+  } else {
+    "Y"
+  }
+
+  rhs <- if (isTRUE(simulation$solution_log_x)) {
+    "log(X)"
+  } else {
+    "X"
+  }
+
+  paste0(
+    lhs,
+    " = ",
+    format_number(simulation$solution_intercept, digits = 2),
+    format_signed_slope(simulation$solution_slope, rhs),
+    if (isTRUE(include_error)) {
+      " + random error"
+    } else {
+      ""
+    }
+  )
+}
+
 statsapps_shared_file <- function(...) {
   installed_file <- system.file("app_shared", ..., package = "statsapps")
 
@@ -73,28 +259,6 @@ ui <- shiny::fluidPage(
   shiny::tags$head(
     shiny::includeCSS(statsapps_shared_file("statsapps.css")),
     shiny::tags$style(shiny::HTML("
-      .lower-plot-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        column-gap: 32px;
-        row-gap: 24px;
-        align-items: start;
-      }
-
-      .plot-cell {
-        min-width: 0;
-      }
-
-      .plot-cell .app-subtitle {
-        margin-top: 18px;
-      }
-
-      @media (max-width: 1100px) {
-        .lower-plot-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-
       .plot-grid {
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -123,9 +287,26 @@ ui <- shiny::fluidPage(
         align-self: end;
       }
 
+      .plot-grid > .ssr-cell {
+        align-self: end;
+      }
+
       .ssr-plot-wrap {
         margin-top: 8px;
         margin-bottom: 8px;
+      }
+
+      .button-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1.35fr;
+        gap: 6px;
+        margin-top: 18px;
+        margin-bottom: 12px;
+      }
+
+      .button-row .btn {
+        width: 100%;
+        white-space: normal;
       }
 
       .residual-mean-note {
@@ -202,6 +383,13 @@ ui <- shiny::fluidPage(
         word-break: normal;
       }
 
+      .simulation-box {
+        background-color: #f7f7f7;
+      }
+
+      .simulation-box p {
+        margin-bottom: 8px;
+      }
     "))
   ),
 
@@ -218,12 +406,10 @@ ui <- shiny::fluidPage(
 
       shiny::tags$p(
         class = "control-note",
-        "The scatterplot shows data and a linear model that
-        has parameters based on the sliders below. Find values for
-        the intercept and slope that minimize the residual error. Consider
-        whether it would help to log transform either variable (or both).
-        Hit 'Show solution' when you think you have found the best values for
-        parameters."
+        "The scatterplot shows data and a linear model that has parameters based on the sliders below.
+        Find values for the intercept and slope that minimize the residual error.
+        Consider whether it would help to log transform either variable (or both).
+        Hit 'Show solution' when you think you have found the best values for parameters."
       ),
 
       shiny::sliderInput(
@@ -231,8 +417,8 @@ ui <- shiny::fluidPage(
         "Intercept",
         min = intercept_range[1],
         max = intercept_range[2],
-        value = -5,
-        step = 0.25
+        value = default_intercept,
+        step = intercept_step
       ),
 
       shiny::sliderInput(
@@ -240,8 +426,8 @@ ui <- shiny::fluidPage(
         "Slope",
         min = slope_range[1],
         max = slope_range[2],
-        value = -2,
-        step = 0.25
+        value = default_slope,
+        step = slope_step
       ),
 
       shiny::checkboxInput(
@@ -256,20 +442,11 @@ ui <- shiny::fluidPage(
         value = FALSE
       ),
 
-      shiny::br(),
-
-      shiny::actionButton(
-        "reset",
-        "Reset",
-        width = "100%"
-      ),
-
-      shiny::br(),
-
-      shiny::actionButton(
-        "solution",
-        "Show solution",
-        width = "100%"
+      shiny::div(
+        class = "button-row",
+        shiny::actionButton("reset", "Reset"),
+        shiny::actionButton("solution", "Show solution"),
+        shiny::actionButton("simulate_data", "Simulate new data")
       ),
 
       shiny::uiOutput("solution_box")
@@ -291,8 +468,8 @@ ui <- shiny::fluidPage(
           shiny::tags$p(
             class = "plot-note",
             "The black line is your current linear model.
-            Red vertical lines show residuals. The other 3 panels on this
-            app show further info on how well the linear model fits the data."
+            Red vertical lines show residuals.
+            The other 3 panels on this app show further information about how well the linear model fits the data."
           )
         ),
 
@@ -300,23 +477,8 @@ ui <- shiny::fluidPage(
           class = "plot-cell ssr-cell",
           shiny::div(
             class = "app-subtitle ssr-title",
-            # shiny::HTML(
-            #   "SS<sub>residual</sub> = &sum;<sub>i</sub> (Y<sub>i</sub> &minus; &#374;<sub>i</sub>)<sup>2</sup>"
-            # )
-            #"SS",shiny::tags$sub("residual")," plot"
             "Sum of squared residuals"
           ),
-          # shiny::tags$p(
-          #   class = "plot-note",
-          #   "The X marks the sum of squares of the residuals (",
-          #   "SS",
-          #   shiny::tags$sub("residual"),
-          #   ") for your current attempt. The open circle marks the smallest",
-          #   "SS",
-          #   shiny::tags$sub("residual"),
-          #   "for these data. Try to get the X as
-          #   close as possible to the circle."
-          # ),
           shiny::div(
             class = "ssr-formula",
             shiny::HTML(
@@ -327,23 +489,7 @@ ui <- shiny::fluidPage(
             class = "ssr-plot-wrap",
             shiny::plotOutput("ssr_plot", height = "230px")
           ),
-          # shiny::tags$p(
-          #   class = "plot-note",
-          #   "Try to get the X close as possible to the open circle (its minimal value for these data)."
-          # ),
           shiny::uiOutput("ssr_feedback")
-
-          # shiny::tags$p(
-          #   class = "plot-note",
-          #   " Even if you minimize ",
-          #   "SS",
-          #   shiny::tags$sub("residual"),
-          #   ", check the residual plots below. Minimizing the value of ",
-          #   "SS",
-          #   shiny::tags$sub("residual"),
-          #   "does not guarantee that the regression model is
-          #   appropriate!"
-          # )
         ),
 
         shiny::div(
@@ -384,8 +530,50 @@ ui <- shiny::fluidPage(
 
 server <- function(input, output, session) {
   solution_visible <- shiny::reactiveVal(FALSE)
+  data_seed <- shiny::reactiveVal(make_initial_seed())
+
+  current_simulation <- shiny::reactive({
+    simulate_linear_reg_data(seed = data_seed())
+  })
+
+  current_data <- shiny::reactive({
+    current_simulation()$data
+  })
+
+  reset_controls <- function() {
+    shiny::updateCheckboxInput(
+      session = session,
+      inputId = "log_x",
+      value = FALSE
+    )
+
+    shiny::updateCheckboxInput(
+      session = session,
+      inputId = "log_y",
+      value = FALSE
+    )
+
+    shiny::updateSliderInput(
+      session = session,
+      inputId = "intercept",
+      min = intercept_range[1],
+      max = intercept_range[2],
+      value = default_intercept,
+      step = intercept_step
+    )
+
+    shiny::updateSliderInput(
+      session = session,
+      inputId = "slope",
+      min = slope_range[1],
+      max = slope_range[2],
+      value = default_slope,
+      step = slope_step
+    )
+  }
+
   displayed_data <- shiny::reactive({
-    data <- linear_reg_data
+    data <- current_data()
 
     data$x_display <- if (isTRUE(input$log_x)) {
       log(data$x)
@@ -406,12 +594,33 @@ server <- function(input, output, session) {
   })
 
   output$solution_summary <- shiny::renderPrint({
-    linreg_data <- data.frame(
-      Y = linear_reg_data$y,
-      log_X = log(linear_reg_data$x)
+    simulation <- current_simulation()
+    data <- simulation$data
+
+    model_data <- data.frame(
+      Y = data$y,
+      log_Y = log(data$y),
+      X = data$x,
+      log_X = log(data$x)
     )
 
-    summary(lm(Y ~ log_X, data = linreg_data))
+    response_name <- if (isTRUE(simulation$solution_log_y)) {
+      "log_Y"
+    } else {
+      "Y"
+    }
+
+    predictor_name <- if (isTRUE(simulation$solution_log_x)) {
+      "log_X"
+    } else {
+      "X"
+    }
+
+    model_formula <- stats::as.formula(
+      paste(response_name, "~", predictor_name)
+    )
+
+    summary(stats::lm(model_formula, data = model_data))
   })
 
   output$solution_box <- shiny::renderUI({
@@ -419,84 +628,118 @@ server <- function(input, output, session) {
       return(NULL)
     }
 
-    shiny::div(
-      class = "solution-box",
-      shiny::tags$h4("Solution"),
-      shiny::tags$p(
-        "These data show a linear relationship between Y and log(X)."
+    simulation <- current_simulation()
+
+    shiny::tagList(
+      shiny::div(
+        class = "solution-box",
+        shiny::tags$h4("Solution"),
+        shiny::tags$p(
+          paste0(
+            "These data show a linear relationship between ",
+            simulation$relationship_label,
+            "."
+          )
+        ),
+        shiny::tags$p(
+          shiny::HTML(
+            paste0(
+              "The best-fit line is: <strong>",
+              solution_formula_text(simulation),
+              "</strong>."
+            )
+          )
+        ),
+        shiny::verbatimTextOutput("solution_summary")
       ),
-      shiny::tags$p(
-        shiny::HTML(
-          "The best-fit line is: <strong>Y = 8 + 1.25 log(X)</strong>."
+
+      shiny::div(
+        class = "solution-box simulation-box",
+        shiny::tags$h4("How these data were simulated"),
+        shiny::tags$pre(
+          paste0(
+            "set.seed(", simulation$seed, ")\n\n",
+            "# Generating relationship\n",
+            solution_formula_text(simulation, include_error = TRUE), "\n\n",
+            "residual_sd <- ",
+            format_number(simulation$residual_sd, digits = 2)
+          )
         )
-      ),
-      shiny::verbatimTextOutput("solution_summary")
+      )
     )
   })
 
   shiny::observeEvent(input$solution, {
+    simulation <- current_simulation()
+
     solution_visible(TRUE)
 
     shiny::updateCheckboxInput(
       session = session,
       inputId = "log_x",
-      value = TRUE
+      value = simulation$solution_log_x
     )
 
     shiny::updateCheckboxInput(
       session = session,
       inputId = "log_y",
-      value = FALSE
+      value = simulation$solution_log_y
     )
 
     shiny::updateSliderInput(
       session = session,
       inputId = "intercept",
-      value = true_intercept
+      value = simulation$solution_intercept
     )
 
     shiny::updateSliderInput(
       session = session,
       inputId = "slope",
-      value = true_slope
+      value = simulation$solution_slope
     )
   })
 
   shiny::observeEvent(input$reset, {
     solution_visible(FALSE)
+    reset_controls()
+  })
 
-    shiny::updateCheckboxInput(
-      session = session,
-      inputId = "log_x",
-      value = FALSE
-    )
-
-    shiny::updateCheckboxInput(
-      session = session,
-      inputId = "log_y",
-      value = FALSE
-    )
-
-    shiny::updateSliderInput(
-      session = session,
-      inputId = "intercept",
-      value = -5
-    )
-
-    shiny::updateSliderInput(
-      session = session,
-      inputId = "slope",
-      value = -2
-    )
+  shiny::observeEvent(input$simulate_data, {
+    solution_visible(FALSE)
+    data_seed(data_seed() + 1L)
+    reset_controls()
   })
 
   current_ssr <- shiny::reactive({
     sum(displayed_data()$residual^2)
   })
 
+  ssr_grid <- shiny::reactive({
+    intercept_values <- slider_values(intercept_range, intercept_step)
+    slope_values <- slider_values(slope_range, slope_step)
+
+    combinations <- expand.grid(
+      intercept = intercept_values,
+      slope = slope_values,
+      KEEP.OUT.ATTRS = FALSE
+    )
+
+    combinations$ssr <- mapply(
+      FUN = calculate_ssr,
+      intercept = combinations$intercept,
+      slope = combinations$slope,
+      MoreArgs = list(
+        data = current_data(),
+        log_x = input$log_x,
+        log_y = input$log_y
+      )
+    )
+
+    combinations
+  })
+
   target_ssr <- shiny::reactive({
-    fit <- stats::lm(y_display ~ x_display, data = displayed_data())
-    sum(stats::residuals(fit)^2)
+    min(ssr_grid()$ssr)
   })
 
   ssr_relative_gap <- shiny::reactive({
@@ -538,23 +781,9 @@ server <- function(input, output, session) {
   })
 
   ssr_axis_max <- shiny::reactive({
-    ssr_combinations <- expand.grid(
-      intercept = intercept_range,
-      slope = slope_range,
-      KEEP.OUT.ATTRS = FALSE
-    )
-
     max_ssr <- max(
-      mapply(
-        FUN = calculate_ssr,
-        intercept = ssr_combinations$intercept,
-        slope = ssr_combinations$slope,
-        MoreArgs = list(
-          data = linear_reg_data,
-          log_x = input$log_x,
-          log_y = input$log_y
-        )
-      )
+      ssr_grid()$ssr,
+      current_ssr()
     )
 
     max(pretty(c(0, max_ssr * 1.08), n = 5))
@@ -627,6 +856,7 @@ server <- function(input, output, session) {
   output$ssr_plot <- shiny::renderPlot({
     current_val <- current_ssr()
     target_val <- target_ssr()
+    axis_max <- ssr_axis_max()
 
     plot_data <- data.frame(
       x = c(0.08, 0.08),
@@ -672,9 +902,9 @@ server <- function(input, output, session) {
         expand = c(0, 0)
       ) +
       ggplot2::scale_y_continuous(
-        limits = c(0, ssr_axis_max()),
-        breaks = pretty(c(0, ssr_axis_max()), n = 5),
-        expand = ggplot2::expansion(mult = c(0.08, 0.10))
+        limits = c(-0.05 * axis_max, axis_max),
+        breaks = pretty(c(0, axis_max), n = 5),
+        expand = ggplot2::expansion(mult = c(0, 0.06))
       ) +
       ggplot2::labs(
         x = NULL,
@@ -716,15 +946,13 @@ server <- function(input, output, session) {
       make_feedback_box(
         type = "neutral",
         label = "Getting closer:",
-        text = "The SS residual is approaching its minimum possible value.
-        Try reducing it further."
+        text = "The SS residual is approaching its minimum possible value. Try reducing it further."
       )
     } else {
       make_feedback_box(
         type = "warn",
         label = "Keep adjusting:",
-        text = "The SS residual is far from its minimum possible value.
-        Try to get the X close as possible to the open circle (its minimal value for these data)."
+        text = "The SS residual is far from its minimum possible value. Try to get the X as close as possible to the open circle."
       )
     }
   })
@@ -765,9 +993,7 @@ server <- function(input, output, session) {
       make_feedback_box(
         type = "good",
         label = "Good sign:",
-        text = "The residuals show little correlation with X. Ensure that the
-        spread of points above and below the line is similar across the range
-        of X."
+        text = "The residuals show very little remaining linear association with X. Still check whether the residuals are spread roughly evenly above and below zero across the full range of X."
       )
     } else if (abs_correlation <= 0.20) {
       make_feedback_box(
