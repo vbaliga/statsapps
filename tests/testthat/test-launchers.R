@@ -3,7 +3,8 @@ test_that("app directories exist", {
     "ANOVA",
     "distributions",
     "linear_reg",
-    "permutation"
+    "permutation",
+    "sums_squares"
   )
 
   app_dirs <- system.file("apps", app_names, package = "statsapps")
@@ -28,10 +29,11 @@ test_that("launcher functions point to the correct apps", {
   expect_invisible(run_distributions_app())
   expect_invisible(run_linear_reg_app())
   expect_invisible(run_permutation_app())
+  expect_invisible(run_sums_squares_app())
 
   expect_identical(
     captured$calls,
-    c("ANOVA", "distributions", "linear_reg", "permutation")
+    c("ANOVA", "distributions", "linear_reg", "permutation", "sums_squares")
   )
 })
 
