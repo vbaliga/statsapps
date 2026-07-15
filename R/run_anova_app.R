@@ -5,8 +5,10 @@
 #'
 #' All data are simulated in R via `rnorm()`.
 #'
-#' @param ... Optional arguments passed to [shiny::runApp()], such as
-#'   `launch.browser = TRUE`. Most users can ignore this.
+#' @param ... Optional arguments passed to [shiny::runApp()]. By default,
+#' statsapps opens apps in the system default web browser using
+#' `launch.browser = TRUE`. Use `launch.browser = FALSE` to disable this
+#' behavior.
 #'
 #' @return `run_anova_app()` opens the Shiny app locally.
 #'

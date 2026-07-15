@@ -1,6 +1,6 @@
 Package: statsapps
-Title: Interactive Shiny Apps to Learn Statistics Intuitively
-Version: 0.0.4.9000
+Title: Interactive 'Shiny' Apps for Building Statistical Intuition
+Version: 0.1.0
 Authors@R: 
     person(given = "Vikram B.",
                  family = "Baliga", 
@@ -8,10 +8,12 @@ Authors@R:
                  email = "vikram.baliga@ubc.ca",
                  comment = c(ORCID = "0000-0002-9367-8974")
                  )
-Description: 
-    Runs Shiny apps locally to help users better understand concepts from
-    data science and statistics through interactive visualization,
-    simulation, and repeated sampling.
+Description:
+    Provides interactive 'Shiny' applications for building intuition in 
+    statistics and data science. The apps run locally and use
+    visualization, simulation, and repeated sampling to illustrate topics
+    such as probability distributions, permutation tests, analysis of
+    variance, linear regression, and sums of squares.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

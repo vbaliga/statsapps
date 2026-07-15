@@ -7,8 +7,10 @@
 run_distributions_app(...)
 }
 \arguments{
-\item{...}{Optional arguments passed to \code{\link[shiny:runApp]{shiny::runApp()}}, such as
-\code{launch.browser = TRUE}. Most users can ignore this.}
+\item{...}{Optional arguments passed to \code{\link[shiny:runApp]{shiny::runApp()}}. By default,
+statsapps opens apps in the system default web browser using
+\code{launch.browser = TRUE}. Use \code{launch.browser = FALSE} to disable this
+behavior.}
 }
 \value{
 \code{run_distributions_app()} opens the Shiny app locally.

@@ -1,4 +1,8 @@
-# statsapps (development version)
+# statsapps
+
+## 2026-07-15 (0.1.0)
+- Prep for CRAN and bump to non-developmental version
+- Enable `launch.browser = TRUE` as default argument in all apps
 
 ## 2026-07-13 (0.0.4.9000)
 - Round out edits to linear regression app

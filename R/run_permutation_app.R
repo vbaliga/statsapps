@@ -12,6 +12,15 @@
 #'
 #' @return `run_permutation_app()` opens the Shiny app locally.
 #'
+#' @references
+#' Johnson, J. C., T. M. Ivy, and S. K. Sakaluk. 1999. Female remating
+#' propensity contingent on sexual cannibalism in sagebrush crickets,
+#' *Cyphoderris strepitans*: a mechanism of cryptic female choice.
+#' *Behavioral Ecology* 10: 227-233.
+#'
+#' Whitlock, M. C., and D. Schluter. 2020. *The Analysis of Biological Data*.
+#' 3rd ed. W. H. Freeman and Company.
+#'
 #' @importFrom dplyr arrange bind_rows filter if_else mutate pull row_number summarise
 #' @importFrom ggplot2 aes annotate element_blank element_line element_text expansion facet_wrap geom_histogram geom_vline ggplot labs margin scale_x_continuous scale_y_continuous theme theme_classic vars
 #' @importFrom purrr map

@@ -1,4 +1,8 @@
-run_statsapps_app <- function(app_name, ...) {
+run_statsapps_app <- function(
+    app_name,
+    launch.browser = getOption("statsapps.launch.browser", TRUE),
+    ...
+) {
   app_dir <- system.file("apps", app_name, package = "statsapps")
 
   if (identical(app_dir, "")) {
@@ -10,5 +14,9 @@ run_statsapps_app <- function(app_name, ...) {
     )
   }
 
-  shiny::runApp(app_dir, ...)
+  shiny::runApp(
+    app_dir,
+    launch.browser = launch.browser,
+    ...
+  )
 }

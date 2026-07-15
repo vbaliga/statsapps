@@ -3,10 +3,19 @@
 
 <!-- badges: start -->
 
+[![Project Status: Active – The project has reached a stable, usable
+state and is being actively
+developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+
 <!-- badges: end -->
 
 The `statsapps` R package features interactive `Shiny` apps to help you
 learn concepts from data science & statistics.
+
+The apps run locally and use visualization, simulation, and repeated
+sampling to illustrate topics such as probability distributions,
+permutation tests, analysis of variance, linear regression, and sums of
+squares.
 
 ## Installation
 
@@ -23,22 +32,13 @@ pak::pak("vbaliga/statsapps")
 All apps can be started via functions from `statsapps`. Each app can be
 started using a function that begins with `run_`. For example, use
 `run_permutation_app()` to start the Shiny app for the Permutation Test.
+This will open a new window in your default web browser with the Shiny
+app.
 
 ``` r
 library(statsapps)
 run_permutation_app()
 ```
-
-<br>
-
-This will open a new window with the Shiny app. It is recommended to hit
-the “Open in Browser” button at the top to get the best view of the app.
-This will open the app in your default web browser.
-
-<p align="center">
-
-<img src="man/figures/perm_app_01.png" width="700">
-</p>
 
 The example we showcase here is the Permutation Test app, demonstrates
 how repeated random reassignment of observations can be used to build a
@@ -55,7 +55,8 @@ recent permutation.
 
 <p align="center">
 
-<img src="man/figures/perm_app_02.png" width="700">
+<img src="man/figures/perm_app_02.png" width="700"/>
+
 </p>
 
 <hr>
@@ -63,7 +64,7 @@ recent permutation.
 ## Contributing and/or raising Issues
 
 Feedback on bugs, improvements, and/or feature requests are all welcome.
-Please see the Issues templates on GitHub to make a bug fix request or
+Please see the Issues section on GitHub to make a bug fix request or
 feature request.
 
 ## Citation

@@ -7,8 +7,10 @@
 run_permutation_app(...)
 }
 \arguments{
-\item{...}{Optional arguments passed to \code{\link[shiny:runApp]{shiny::runApp()}}, such as
-\code{launch.browser = TRUE}. Most users can ignore this.}
+\item{...}{Optional arguments passed to \code{\link[shiny:runApp]{shiny::runApp()}}. By default,
+statsapps opens apps in the system default web browser using
+\code{launch.browser = TRUE}. Use \code{launch.browser = FALSE} to disable this
+behavior.}
 }
 \value{
 \code{run_permutation_app()} opens the Shiny app locally.
@@ -27,4 +29,13 @@ Whitlock and Schluter.
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 run_permutation_app()
 \dontshow{\}) # examplesIf}
+}
+\references{
+Johnson, J. C., T. M. Ivy, and S. K. Sakaluk. 1999. Female remating
+propensity contingent on sexual cannibalism in sagebrush crickets,
+\emph{Cyphoderris strepitans}: a mechanism of cryptic female choice.
+\emph{Behavioral Ecology} 10: 227-233.
+
+Whitlock, M. C., and D. Schluter. 2020. \emph{The Analysis of Biological Data}.
+3rd ed. W. H. Freeman and Company.
 }
