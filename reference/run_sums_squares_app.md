@@ -15,8 +15,10 @@ run_sums_squares_app(...)
 - ...:
 
   Optional arguments passed to
-  [`shiny::runApp()`](https://rdrr.io/pkg/shiny/man/runApp.html), such
-  as `launch.browser = TRUE`. Most users can ignore this.
+  [`shiny::runApp()`](https://rdrr.io/pkg/shiny/man/runApp.html). By
+  default, statsapps opens apps in the system default web browser using
+  `launch.browser = TRUE`. Use `launch.browser = FALSE` to disable this
+  behavior.
 
 ## Value
 
