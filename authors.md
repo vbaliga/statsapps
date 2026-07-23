@@ -9,7 +9,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/vbaliga/statsapps/blob/master/inst/CITATION)
+[`inst/CITATION`](https://github.com/vbaliga/statsapps/blob/v0.1.0/inst/CITATION)
 
 Baliga VB (2026). *statsapps: Interactive 'Shiny' Apps for Building
 Statistical Intuition*. R package version 0.1.0,
