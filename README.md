@@ -1,8 +1,11 @@
 
-# statsapps
+# statsapps <img src="man/figures/logo.png" align="right" height="139" alt="statsapps logo" />
 
 <!-- badges: start -->
 
+[![CRAN
+status](https://www.r-pkg.org/badges/version/statsapps)](https://CRAN.R-project.org/package=statsapps)
+[![R-CMD-check](https://github.com/vbaliga/statsapps/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/vbaliga/statsapps/actions/workflows/R-CMD-check.yaml)
 [![Project Status: Active – The project has reached a stable, usable
 state and is being actively
 developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
@@ -17,15 +20,37 @@ sampling to illustrate topics such as probability distributions,
 permutation tests, analysis of variance, linear regression, and sums of
 squares.
 
+For more see the [statsapps package
+website](https://vbaliga.github.io/statsapps/).
+
 ## Installation
 
-You can install the development version of `statsapps` from [this GitHub
-repo](https://github.com/vbaliga/statsapps) with:
+Install the current release from
+[CRAN](https://CRAN.R-project.org/package=statsapps):
+
+``` r
+install.packages("statsapps")
+```
+
+To get a bug fix or to use a feature from the development version, you
+can instead install the development version of `statsapps` from [this
+GitHub repo](https://github.com/vbaliga/statsapps) with:
 
 ``` r
 # install.packages("pak")
 pak::pak("vbaliga/statsapps")
 ```
+
+## Available apps
+
+- `run_distributions_app()`
+- `run_sums_squares_app()`
+- `run_anova_app()`
+- `run_linear_reg_app()`
+- `run_permutation_app()`
+
+The apps open in your default web browser. Set `launch.browser = FALSE`
+to disable this behavior.
 
 ## Example
 
@@ -69,7 +94,29 @@ feature request.
 
 ## Citation
 
-TBD
+To cite `statsapps` in publications, use:
+
+``` r
+citation("statsapps")
+#> To cite package 'statsapps' in publications use:
+#> 
+#>   Baliga VB (2026). _statsapps: Interactive 'Shiny' Apps for Building
+#>   Statistical Intuition_. R package version 0.1.0,
+#>   <https://github.com/vbaliga/statsapps>.
+#> 
+#> A BibTeX entry for LaTeX users is
+#> 
+#>   @Manual{,
+#>     title = {statsapps: Interactive 'Shiny' Apps for Building Statistical Intuition},
+#>     author = {Vikram B. Baliga},
+#>     year = {2026},
+#>     note = {R package version 0.1.0},
+#>     url = {https://github.com/vbaliga/statsapps},
+#>   }
+```
+
+The CRAN package DOI is
+[10.32614/CRAN.package.statsapps](https://doi.org/10.32614/CRAN.package.statsapps).
 
 ## License
 

@@ -9,11 +9,18 @@ template:
 home:
   title: statsapps
   description: Interactive Shiny apps for learning statistics in R.
+  links:
+  - text: Changelog
+    href: news/index.html
 
 navbar:
   structure:
     left: [reference]
     right: [github]
+
+authors:
+  Vikram B. Baliga:
+    href: https://vbaliga.github.io/
 
 reference:
 - title: Launch apps

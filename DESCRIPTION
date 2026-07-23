@@ -1,13 +1,15 @@
 Package: statsapps
 Title: Interactive 'Shiny' Apps for Building Statistical Intuition
 Version: 0.1.0
+Date: 2026-07-23
 Authors@R: 
-    person(given = "Vikram B.",
-                 family = "Baliga", 
-                 role = c("aut", "cre", "cph"),
-                 email = "vikram.baliga@ubc.ca",
-                 comment = c(ORCID = "0000-0002-9367-8974")
-                 )
+    person(
+        given = c("Vikram", "B."),
+        family = "Baliga",
+        role = c("aut", "cre", "cph"),
+        email = "vikram.baliga@ubc.ca",
+        comment = c(ORCID = "0000-0002-9367-8974")
+    )
 Description:
     Provides interactive 'Shiny' applications for building intuition in 
     statistics and data science. The apps run locally and use
