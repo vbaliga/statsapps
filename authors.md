@@ -2,15 +2,16 @@
 
 ## Authors
 
-- **Vikram B. Baliga**. Author, maintainer, copyright holder.
+- **[Vikram B. Baliga](https://vbaliga.github.io/)**. Author,
+  maintainer, copyright holder.
   [](https://orcid.org/0000-0002-9367-8974)
 
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/vbaliga/statsapps/blob/master/DESCRIPTION)
+[`inst/CITATION`](https://github.com/vbaliga/statsapps/blob/master/inst/CITATION)
 
-Baliga V (2026). *statsapps: Interactive 'Shiny' Apps for Building
+Baliga VB (2026). *statsapps: Interactive 'Shiny' Apps for Building
 Statistical Intuition*. R package version 0.1.0,
 <https://github.com/vbaliga/statsapps>.
 
