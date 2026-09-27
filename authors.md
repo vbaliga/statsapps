@@ -12,13 +12,13 @@ Source:
 [`inst/CITATION`](https://github.com/vbaliga/statsapps/blob/master/inst/CITATION)
 
 Baliga VB (2026). *statsapps: Interactive 'Shiny' Apps for Building
-Statistical Intuition*. R package version 0.1.0.9000,
+Statistical Intuition*. R package version 0.2.0,
 <https://github.com/vbaliga/statsapps>.
 
     @Manual{,
       title = {statsapps: Interactive 'Shiny' Apps for Building Statistical Intuition},
       author = {Vikram B. Baliga},
       year = {2026},
-      note = {R package version 0.1.0.9000},
+      note = {R package version 0.2.0},
       url = {https://github.com/vbaliga/statsapps},
     }

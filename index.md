@@ -91,7 +91,7 @@ citation("statsapps")
 #> To cite package 'statsapps' in publications use:
 #> 
 #>   Baliga VB (2026). _statsapps: Interactive 'Shiny' Apps for Building
-#>   Statistical Intuition_. R package version 0.1.0.9000,
+#>   Statistical Intuition_. R package version 0.2.0,
 #>   <https://github.com/vbaliga/statsapps>.
 #> 
 #> A BibTeX entry for LaTeX users is
@@ -100,7 +100,7 @@ citation("statsapps")
 #>     title = {statsapps: Interactive 'Shiny' Apps for Building Statistical Intuition},
 #>     author = {Vikram B. Baliga},
 #>     year = {2026},
-#>     note = {R package version 0.1.0.9000},
+#>     note = {R package version 0.2.0},
 #>     url = {https://github.com/vbaliga/statsapps},
 #>   }
 ```
