@@ -9,4 +9,4 @@
 
 ## Comments
 
-This is a first submission.
+This is an update to an existing CRAN package.

@@ -53,6 +53,7 @@ pak::pak("vbaliga/statsapps")
 - `run_anova_app()`
 - `run_linear_reg_app()`
 - `run_permutation_app()`
+- `run_power_precision_app()`
 
 The apps open in your default web browser. Set `launch.browser = FALSE` to 
 disable this behavior.

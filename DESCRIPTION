@@ -1,7 +1,7 @@
 Package: statsapps
 Title: Interactive 'Shiny' Apps for Building Statistical Intuition
-Version: 0.1.0
-Date: 2026-07-23
+Version: 0.1.0.9000
+Date: 2026-09-27
 Authors@R: 
     person(
         given = c("Vikram", "B."),

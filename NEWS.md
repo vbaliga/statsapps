@@ -1,3 +1,9 @@
+# statsapps 0.1.0.9000
+
+*2026-09-27*
+
+- Introduce statistical power app `run_power_precision_app()`
+
 # statsapps 0.1.0
 
 *2026-07-15*

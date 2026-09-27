@@ -1,0 +1,211 @@
+/* Scoped to this app. No changes to shared styling or other apps. */
+.pp-app {
+  max-width: none;
+  margin: 0;
+  padding: 12px 9px 0;
+}
+/* Keep the familiar Shiny sidebar/main structure, but give the plots all
+   remaining width rather than keeping a fixed 1180px page. */
+.pp-app .pp-layout > .row {
+  display: grid;
+  grid-template-columns: 310px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+  margin: 0;
+}
+.pp-app .pp-layout > .row::before,
+.pp-app .pp-layout > .row::after {
+  display: none;
+}
+.pp-app .pp-layout > .row > .col-sm-3,
+.pp-app .pp-layout > .row > .col-sm-9 {
+  float: none;
+  width: auto;
+  min-width: 0;
+  padding: 0;
+}
+.pp-app .pp-layout > .row > .col-sm-3 > .well {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+}
+.pp-app .pp-sidebar,
+.pp-app .pp-main {
+  min-width: 0;
+}
+.pp-app .app-title {
+  font-size: 36px;
+  margin: 0 0 8px;
+}
+.pp-app .pp-intro {
+  font-size: 18px;
+  line-height: 1.45;
+  margin: 0 0 20px;
+}
+.pp-app h2.pp-fictional {
+  font-size: 22px;
+  margin: 0 0 8px;
+}
+.pp-app .pp-study {
+  font-size: 17px;
+  margin: 0 0 10px;
+}
+.pp-app .pp-data-caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin: 2px 0 16px;
+}
+.pp-app .pp-data-caption p {
+  font-size: 15px;
+  margin: 0;
+}
+.pp-app .pp-data-caption .btn {
+  flex-shrink: 0;
+  font-size: 15px;
+}
+.pp-app h2 {
+  color: #315f96;
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.25;
+  margin: 0 0 12px;
+}
+.pp-app .pp-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+}
+.pp-app .pp-model-controls,
+.pp-app .pp-sample-size {
+  min-width: 0;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+  background: #f5f5f5;
+  padding: 14px;
+}
+.pp-app .pp-sample-size .shiny-input-container {
+  width: 100%;
+}
+.pp-app .pp-sample-size p {
+  font-size: 15px;
+  margin: 4px 0 0;
+}
+.pp-app .pp-checkbox-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+.pp-app .pp-controls .shiny-input-container {
+  width: auto;
+  margin-bottom: 0;
+}
+.pp-app .pp-controls .checkbox {
+  margin: 0;
+}
+.pp-app .pp-controls label {
+  font-size: 17px;
+  line-height: 1.4;
+}
+.pp-app .pp-interactions {
+  margin-top: 12px;
+}
+.pp-app .pp-repeats {
+  margin-top: 12px;
+  font-size: 15px;
+}
+.pp-app .pp-repeats summary {
+  display: list-item;
+  cursor: pointer;
+  color: #555555;
+}
+.pp-app .pp-repeats[open] .pp-checkbox-row {
+  margin-top: 10px;
+}
+.pp-app .pp-model {
+  margin: 16px 0 18px;
+}
+.pp-app .pp-model pre {
+  background: #f6f7f8;
+  border: 0;
+  border-radius: 0;
+  font-size: 16px;
+  line-height: 1.45;
+  padding: 9px 12px;
+  margin-bottom: 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.pp-app .pp-estimate {
+  font-size: 17px;
+  line-height: 1.45;
+  margin: 0;
+}
+.pp-app .pp-model-note {
+  font-size: 14px;
+  margin: 5px 0 0;
+}
+.pp-app .pp-invalid {
+  color: #9b3022;
+}
+.pp-app .pp-results {
+  border-top: 1px solid #e5e5e5;
+  padding-top: 18px;
+}
+.pp-app .pp-results-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 32px;
+}
+.pp-app .pp-result {
+  min-width: 0;
+}
+.pp-app .pp-result h2 {
+  margin-bottom: 4px;
+}
+.pp-app .pp-feedback {
+  font-size: 18px;
+  line-height: 1.45;
+  margin: 6px 0 0;
+}
+.pp-app .pp-simulation-note {
+  font-size: 14px;
+  line-height: 1.4;
+  margin: 8px 0 0;
+}
+.pp-app .pp-warning {
+  color: #9b3022;
+  background: #fff5f2;
+  border-left: 3px solid #9b3022;
+  font-size: 16px;
+  line-height: 1.4;
+  padding: 9px 12px;
+  margin-bottom: 16px;
+}
+.pp-app .pp-caution {
+  font-size: calc(16px + 1pt);
+  line-height: 1.45;
+  border-top: 1px solid #e5e5e5;
+  padding-top: 14px;
+  margin: 18px 0 0;
+}
+.pp-app .footer-note {
+  font-size: 13px;
+  margin-top: 14px;
+  padding: 10px 0 12px;
+}
+/* Reflow on narrower screens instead of shrinking text or plot fonts. */
+@media (max-width: 1150px) {
+  .pp-app .pp-results-grid { grid-template-columns: 1fr; gap: 20px; }
+}
+@media (max-width: 960px) {
+  .pp-app .pp-layout > .row { grid-template-columns: 1fr; gap: 24px; }
+  .pp-app .pp-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .pp-app .pp-controls { grid-template-columns: 1fr; }
+}
