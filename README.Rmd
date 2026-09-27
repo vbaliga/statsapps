@@ -74,7 +74,8 @@ There are several tabs within the main window of the app. The first two tabs pro
 
 <p align="center">
 
-<img src="man/figures/perm_app_02.png" width="700"/>
+<img src="man/figures/perm_app_02.png" width="700"
+     alt="Permutation test app showing how random reassignment of observations builds a null distribution."/>
 
 </p>
 

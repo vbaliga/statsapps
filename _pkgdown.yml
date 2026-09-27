@@ -30,6 +30,7 @@ reference:
   - run_anova_app
   - run_linear_reg_app
   - run_permutation_app
+  - run_power_precision_app
 
 footer:
   structure:

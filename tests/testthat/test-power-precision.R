@@ -680,7 +680,13 @@ test_that("every slider setting plots every point in the correct age and drink g
     session$setInputs(n_people = 42, include_sleep = TRUE, include_age = TRUE,
       include_coffee = TRUE, interaction_one = FALSE, interaction_two = FALSE,
       repeated = FALSE, account_person = TRUE, new_sample = 0)
-    for (n in seq(12L, 180L, by = 6L)) {
+    sample_sizes <- if (identical(Sys.getenv("NOT_CRAN"), "true")) {
+      seq(12L, 180L, by = 6L)
+    } else {
+      c(12L, 42L, 180L)
+    }
+
+    for (n in sample_sizes) {
       for (with_repeats in c(FALSE, TRUE)) {
         session$setInputs(n_people = n, repeated = with_repeats)
         plotted <- plot_points()

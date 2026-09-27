@@ -48,6 +48,7 @@ pak::pak("vbaliga/statsapps")
 - `run_anova_app()`
 - `run_linear_reg_app()`
 - `run_permutation_app()`
+- `run_power_precision_app()`
 
 The apps open in your default web browser. Set `launch.browser = FALSE`
 to disable this behavior.
@@ -80,7 +81,8 @@ recent permutation.
 
 <p align="center">
 
-<img src="man/figures/perm_app_02.png" width="700"/>
+<img src="man/figures/perm_app_02.png" width="700"
+     alt="Permutation test app showing how random reassignment of observations builds a null distribution."/>
 
 </p>
 
@@ -101,7 +103,7 @@ citation("statsapps")
 #> To cite package 'statsapps' in publications use:
 #> 
 #>   Baliga VB (2026). _statsapps: Interactive 'Shiny' Apps for Building
-#>   Statistical Intuition_. R package version 0.1.0,
+#>   Statistical Intuition_. R package version 0.1.0.9000,
 #>   <https://github.com/vbaliga/statsapps>.
 #> 
 #> A BibTeX entry for LaTeX users is
@@ -110,7 +112,7 @@ citation("statsapps")
 #>     title = {statsapps: Interactive 'Shiny' Apps for Building Statistical Intuition},
 #>     author = {Vikram B. Baliga},
 #>     year = {2026},
-#>     note = {R package version 0.1.0},
+#>     note = {R package version 0.1.0.9000},
 #>     url = {https://github.com/vbaliga/statsapps},
 #>   }
 ```
