@@ -4,7 +4,8 @@ test_that("all app.R files parse", {
     "distributions",
     "linear_reg",
     "permutation",
-    "sums_squares"
+    "sums_squares",
+    "power_precision"
   )
 
   app_dirs <- system.file("apps", app_names, package = "statsapps")

@@ -9,3 +9,4 @@
 ^codemeta\.json$
 ^cran-comments\.md$
 ^CRAN-SUBMISSION$
+(^|/)Rplots[0-9]*\.pdf$

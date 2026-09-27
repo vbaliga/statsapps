@@ -25,10 +25,55 @@ power_load_app <- function() {
   app
 }
 
+# Plot-layout checks need a graphics device for measurements, not a PDF file.
+# Keep this scoped to each check; do not change the user's default device.
+power_with_null_device <- function(code) {
+  previous_device <- grDevices::dev.cur()
+  grDevices::pdf(file = NULL)
+  device <- grDevices::dev.cur()
+  on.exit({
+    if (device %in% grDevices::dev.list()) {
+      grDevices::dev.off(device)
+    }
+    if (previous_device > 1L && previous_device %in% grDevices::dev.list()) {
+      grDevices::dev.set(previous_device)
+    }
+  }, add = TRUE)
+  force(code)
+}
+
 test_that("power app code and local CSS exist", {
   expect_true(file.exists(file.path(power_app_path, "power_precision.css")))
   expect_no_error(parse(file.path(power_app_path, "helpers.R")))
   expect_no_error(parse(file.path(power_app_path, "app.R")))
+})
+
+test_that("plot-layout checks create no files and restore devices after errors", {
+  local({
+    scratch <- tempfile("statsapps-graphics-")
+    dir.create(scratch)
+    old_wd <- setwd(scratch)
+    on.exit({
+      setwd(old_wd)
+      unlink(scratch, recursive = TRUE)
+    }, add = TRUE)
+
+    before <- grDevices::dev.list()
+    active <- grDevices::dev.cur()
+    figure <- ggplot2::ggplot()
+    grob <- power_with_null_device(ggplot2::ggplotGrob(figure))
+    expect_s3_class(grob, "gtable")
+    expect_identical(grDevices::dev.list(), before)
+    expect_identical(grDevices::dev.cur(), active)
+
+    expect_error(power_with_null_device({
+      ggplot2::ggplotGrob(figure)
+      stop("test plotting error")
+    }), "test plotting error")
+    expect_identical(grDevices::dev.list(), before)
+    expect_identical(grDevices::dev.cur(), active)
+    expect_length(list.files(scratch, all.files = TRUE, no.. = TRUE), 0L)
+  })
 })
 
 test_that("simulation preserves the caller's RNG, including on errors", {
@@ -601,7 +646,7 @@ test_that("the CI reference line is labelled directly and cannot obscure its val
         include_age = state$selected, include_coffee = state$selected,
         interaction_one = state$selected, interaction_two = state$selected)
       figure <- precision_figure()
-      built <- ggplot2::ggplot_build(figure)
+      built <- power_with_null_device(ggplot2::ggplot_build(figure))
       layer_index <- function(geom) which(vapply(figure$layers, function(layer) {
         inherits(layer$geom, geom)
       }, logical(1)))
@@ -650,7 +695,7 @@ test_that("the CI reference line is labelled directly and cannot obscure its val
       } else {
         expect_equal(value_layer$geom_params$label.size, 0)
       }
-      expect_no_error(ggplot2::ggplotGrob(figure))
+      expect_no_error(power_with_null_device(ggplot2::ggplotGrob(figure)))
       expect_no_error(output$precision_plot)
     }
   })
@@ -702,7 +747,7 @@ test_that("every slider setting plots every point in the correct age and drink g
           inherits(layer$geom, "GeomPoint")
         }, logical(1)))
         expect_length(point_index, 1L)
-        built <- ggplot2::ggplot_build(figure)
+        built <- power_with_null_device(ggplot2::ggplot_build(figure))
         drawn <- built$data[[point_index]]
         expect_equal(nrow(drawn), nrow(raw))
         expect_false(anyNA(drawn[, c("x", "y", "colour", "PANEL")]))
@@ -725,7 +770,7 @@ test_that("every slider setting plots every point in the correct age and drink g
       plotted <- plot_points()
       expect_true(all(plotted$plot_x > 0.5 & plotted$plot_x < 2.5))
       expect_equal(nrow(plotted), n)
-      expect_no_error(ggplot2::ggplotGrob(data_figure()))
+      expect_no_error(power_with_null_device(ggplot2::ggplotGrob(data_figure())))
     }
   })
 })

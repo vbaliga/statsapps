@@ -1,6 +1,6 @@
 Package: statsapps
 Title: Interactive 'Shiny' Apps for Building Statistical Intuition
-Version: 0.1.0.9000
+Version: 0.2.0
 Date: 2026-09-27
 Authors@R: 
     person(
@@ -31,5 +31,5 @@ Depends:
 URL: https://github.com/vbaliga/statsapps, https://vbaliga.github.io/statsapps/
 BugReports: https://github.com/vbaliga/statsapps/issues
 Suggests: 
-    testthat (>= 3.0.0)
+    testthat (>= 3.2.0)
 Config/testthat/edition: 3

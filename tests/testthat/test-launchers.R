@@ -4,7 +4,8 @@ test_that("app directories exist", {
     "distributions",
     "linear_reg",
     "permutation",
-    "sums_squares"
+    "sums_squares",
+    "power_precision"
   )
 
   app_dirs <- system.file("apps", app_names, package = "statsapps")
@@ -30,10 +31,12 @@ test_that("launcher functions point to the correct apps", {
   expect_invisible(run_linear_reg_app())
   expect_invisible(run_permutation_app())
   expect_invisible(run_sums_squares_app())
+  expect_invisible(run_power_precision_app())
 
   expect_identical(
     captured$calls,
-    c("ANOVA", "distributions", "linear_reg", "permutation", "sums_squares")
+    c("ANOVA", "distributions", "linear_reg", "permutation", "sums_squares",
+      "power_precision")
   )
 })
 
@@ -122,10 +125,12 @@ test_that("launcher functions pass launch.browser through to run_statsapps_app",
   expect_invisible(run_linear_reg_app(launch.browser = FALSE))
   expect_invisible(run_permutation_app(launch.browser = FALSE))
   expect_invisible(run_sums_squares_app(launch.browser = FALSE))
+  expect_invisible(run_power_precision_app(launch.browser = FALSE))
 
   expect_false(captured$args$ANOVA$launch.browser)
   expect_false(captured$args$distributions$launch.browser)
   expect_false(captured$args$linear_reg$launch.browser)
   expect_false(captured$args$permutation$launch.browser)
   expect_false(captured$args$sums_squares$launch.browser)
+  expect_false(captured$args$power_precision$launch.browser)
 })

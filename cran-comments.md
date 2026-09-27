@@ -9,4 +9,7 @@
 
 ## Comments
 
-This is an update to an existing CRAN package.
+This is an update to an existing CRAN package. The update 
+adds an interactive app demonstrating how sample size and 
+model choices affect statistical power and precision for 
+a known simulated effect.
