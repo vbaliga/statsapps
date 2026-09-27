@@ -12,3 +12,5 @@
   : Launch the simple linear regression app
 - [`run_permutation_app()`](https://vbaliga.github.io/statsapps/reference/run_permutation_app.md)
   : Launch the permutation test app
+- [`run_power_precision_app()`](https://vbaliga.github.io/statsapps/reference/run_power_precision_app.md)
+  : Launch the power and precision app

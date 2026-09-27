@@ -1,5 +1,12 @@
 # Changelog
 
+## statsapps 0.1.0.9000
+
+*2026-09-27*
+
+- Introduce statistical power app
+  [`run_power_precision_app()`](https://vbaliga.github.io/statsapps/reference/run_power_precision_app.md)
+
 ## statsapps 0.1.0
 
 CRAN release: 2026-07-23
