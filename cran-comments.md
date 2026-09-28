@@ -6,6 +6,7 @@
 
 * local macOS, R 4.6.1
 * win-builder, R-devel
+* R-hub via GitHub Actions: Linux, Windows, and macOS
 
 ## Comments
 
