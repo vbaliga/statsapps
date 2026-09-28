@@ -62,6 +62,19 @@ add_plot_positions <- function(data) {
 }
 
 simulate_sums_squares_data <- function(seed = 20260710) {
+  # Reproducible examples must not replace the caller's saved RNG state.
+  had_seed <- exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+  if (had_seed) {
+    old_seed <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+  }
+  on.exit({
+    if (had_seed) {
+      assign(".Random.seed", old_seed, envir = .GlobalEnv)
+    } else if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+      rm(".Random.seed", envir = .GlobalEnv)
+    }
+  }, add = TRUE)
+
   set.seed(seed)
 
   group_info <- data.frame(
@@ -107,7 +120,10 @@ summarize_sums_squares <- function(data) {
     group_mean = group_summary$y[, "mean"]
   )
 
-  group_summary$group <- factor(group_summary$group, levels = levels(data$group))
+  group_summary$group <- factor(
+    group_summary$group,
+    levels = levels(data$group)
+  )
   group_summary$x_group <- as.integer(group_summary$group)
 
   data$group_mean <- group_summary$group_mean[

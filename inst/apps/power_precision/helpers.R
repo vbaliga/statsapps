@@ -38,7 +38,12 @@ pp_scalar <- function(x, name, lower = -Inf, upper = Inf) {
 
 # Apply the same range and divisibility rule to the slider and simulation.
 pp_validate_n_people <- function(n_people) {
-  pp_scalar(n_people, "n_people", pp_defaults$min_people, pp_defaults$max_people)
+  pp_scalar(
+    n_people,
+    "n_people",
+    pp_defaults$min_people,
+    pp_defaults$max_people
+  )
   if (n_people != as.integer(n_people) || n_people %% pp_defaults$people_step != 0) {
     stop("Use a whole number of people divisible by 6.", call. = FALSE)
   }
@@ -206,7 +211,7 @@ pp_prepare_data <- function(data) {
     stop("Missing values are not supported.", call. = FALSE)
   }
   for (name in c("reaction_time_ms", "drink", "hours_slept", "daily_coffee_cups")) {
-    if (!is.numeric(data[[name]]) || any(!is.finite(data[[name]]))) {
+    if (!is.numeric(data[[name]]) || !all(is.finite(data[[name]]))) {
       stop("All numeric observations must be finite.", call. = FALSE)
     }
   }
@@ -228,7 +233,10 @@ pp_prepare_data <- function(data) {
   if (!all(as.character(people$age_group) %in% c("18-29", "30-44", "45-65"))) {
     stop("Unrecognized age group.", call. = FALSE)
   }
-  people$age_group <- factor(people$age_group, levels = c("18-29", "30-44", "45-65"))
+  people$age_group <- factor(
+    people$age_group,
+    levels = c("18-29", "30-44", "45-65")
+  )
   means <- vapply(rows, function(r) mean(data$reaction_time_ms[r]), numeric(1))
   list(people = people, group = group, counts = lengths(rows), means = means,
        y = data$reaction_time_ms,
@@ -236,17 +244,27 @@ pp_prepare_data <- function(data) {
 }
 
 pp_check_design <- function(X, counts) {
-  if (any(!is.finite(X)) || qr(X)$rank != ncol(X)) {
+  if (!all(is.finite(X)) || qr(X)$rank != ncol(X)) {
     stop("The selected model is not full rank.", call. = FALSE)
   }
   if (nrow(X) <= ncol(X) || length(counts) != nrow(X) || any(counts < 1)) {
-    stop("There are insufficient independent people for this model.", call. = FALSE)
+    stop(
+      "There are insufficient independent people for this model.",
+      call. = FALSE
+    )
   }
 }
 
 # Full-data profiled restricted likelihood, written using grouped sufficient
 # statistics. log|I + lambda ZZ'| = sum(log(1 + lambda * m_i)).
-pp_profile_reml <- function(theta, X, counts, means, ss_within, details = FALSE) {
+pp_profile_reml <- function(
+    theta,
+    X,
+    counts,
+    means,
+    ss_within,
+    details = FALSE
+) {
   ratio <- expm1(theta)
   weights <- counts / (1 + ratio * counts)
   information <- crossprod(X, X * weights)
@@ -258,7 +276,10 @@ pp_profile_reml <- function(theta, X, counts, means, ss_within, details = FALSE)
   df <- sum(counts) - ncol(X)
   sigma2 <- q / df
   if (!is.finite(sigma2) || sigma2 <= .Machine$double.eps) {
-    stop("Residual variation is too small to estimate uncertainty.", call. = FALSE)
+    stop(
+      "Residual variation is too small to estimate uncertainty.",
+      call. = FALSE
+    )
   }
   objective <- df * log(sigma2) + sum(log1p(ratio * counts)) +
     2 * sum(log(diag(R)))
@@ -299,7 +320,12 @@ pp_contrast_df <- function(X, counts, tau2, sigma2, contrast) {
   max(1, min(sum(counts) - p, 2 * variance^2 / variance_of_variance))
 }
 
-pp_fit_data <- function(data, spec, account_person = TRUE, alpha = pp_defaults$alpha) {
+pp_fit_data <- function(
+    data,
+    spec,
+    account_person = TRUE,
+    alpha = pp_defaults$alpha
+) {
   pp_scalar(alpha, "alpha", .Machine$double.eps, 1 - .Machine$double.eps)
   d <- pp_prepare_data(data)
   X <- pp_design(d$people, spec)
@@ -322,7 +348,10 @@ pp_fit_data <- function(data, spec, account_person = TRUE, alpha = pp_defaults$a
     candidates <- c(0, grid[best], opt$minimum)
     theta <- candidates[which.min(vapply(candidates, objective, numeric(1)))]
     if (theta >= max(grid) - 0.01) {
-      stop("The random-intercept variance reached the numerical search limit.", call. = FALSE)
+      stop(
+        "The random-intercept variance reached the numerical search limit.",
+        call. = FALSE
+      )
     }
     model <- pp_profile_reml(theta, X, d$counts, d$means, d$ss_within, TRUE)
     beta <- model$beta
@@ -339,7 +368,10 @@ pp_fit_data <- function(data, spec, account_person = TRUE, alpha = pp_defaults$a
     df <- nrow(Xlong) - model$rank
     sigma2 <- sum(model$residuals^2) / df
     if (!is.finite(sigma2) || sigma2 <= .Machine$double.eps) {
-      stop("Residual variation is too small to estimate uncertainty.", call. = FALSE)
+      stop(
+        "Residual variation is too small to estimate uncertainty.",
+        call. = FALSE
+      )
     }
     inverse <- chol2inv(qr.R(model$qr))
     unpivot <- order(model$qr$pivot)
@@ -353,7 +385,9 @@ pp_fit_data <- function(data, spec, account_person = TRUE, alpha = pp_defaults$a
   critical <- stats::qt(1 - alpha / 2, df)
   lower <- estimate - critical * se
   upper <- estimate + critical * se
-  fitted <- as.vector(X[d$group, , drop = FALSE] %*% beta) + person_effects[d$group]
+  fitted <- as.vector(
+    X[d$group, , drop = FALSE] %*% beta
+  ) + person_effects[d$group]
   list(beta = beta, vcov = covariance, estimate = estimate, se = se,
        lower = lower, upper = upper, width = upper - lower, df = df,
        p_value = 2 * stats::pt(-abs(estimate / se), df), critical = critical,
@@ -411,7 +445,13 @@ pp_plot_view <- function(spec) {
     list(x = "daily_coffee_cups", x_label = "Cups of coffee per day", continuous = TRUE,
          size = NULL, facet = spec$age)
   } else {
-    list(x = "drink", x_label = NULL, continuous = FALSE, size = NULL, facet = spec$age)
+    list(
+      x = "drink",
+      x_label = NULL,
+      continuous = FALSE,
+      size = NULL,
+      facet = spec$age
+    )
   }
 }
 
@@ -520,7 +560,11 @@ pp_power_feedback <- function(power, baseline, compare = TRUE, valid = TRUE,
   # One decimal avoids describing near-100% power as a guarantee.
   missed <- 100 * (1 - power)
   chance <- if (missed < 0.1) "less than 0.1%" else sprintf("%.1f%%", missed)
-  paste(first, "The chance of missing the true caffeine effect is", paste0(chance, "."))
+  paste(
+    first,
+    "The chance of missing the true caffeine effect is",
+    paste0(chance, ".")
+  )
 }
 
 pp_precision_feedback <- function(width, baseline_width, lower, upper,

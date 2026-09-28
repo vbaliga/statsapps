@@ -108,15 +108,17 @@ test_that("repeats are unequal and keep the first measurement unchanged", {
   study <- power_env$pp_make_study(1800)
   single <- power_env$pp_sample_data(study)
   repeated <- power_env$pp_sample_data(study, TRUE)
-  expect_equal(nrow(single), 42L)
-  expect_equal(as.integer(table(single$drink)), c(21L, 21L))
-  expect_equal(length(unique(repeated$person)), 42L)
+  expect_identical(nrow(single), 42L)
+  expect_identical(as.integer(table(single$drink)), c(21L, 21L))
+  expect_length(unique(repeated$person), 42L)
   expect_true(all(table(repeated$person) %in% 1:5))
   expect_gt(length(unique(as.integer(table(repeated$person)))), 1L)
   first <- repeated[repeated$measurement == 1L, ]
-  expect_equal(first$reaction_time_ms, single$reaction_time_ms)
-  expect_equal(first$hours_slept, single$hours_slept)
-  expect_true(all(single$daily_coffee_cups >= 0 & single$daily_coffee_cups <= 4))
+  expect_identical(first$reaction_time_ms, single$reaction_time_ms)
+  expect_identical(first$hours_slept, single$hours_slept)
+  expect_true(
+    all(single$daily_coffee_cups >= 0 & single$daily_coffee_cups <= 4)
+  )
 })
 
 test_that("formula names match measurement units and show the random intercept", {
@@ -128,9 +130,13 @@ test_that("formula names match measurement units and show the random intercept",
   expect_identical(power_env$pp_formula_text(capped),
     "reaction_time_ms ~ drink * hours_slept + age_group + daily_coffee_cups")
   expect_length(power_env$pp_columns(full), 9L)
-  expect_true(full$sleep && full$age && full$coffee)
+  expect_true(full$sleep)
+  expect_true(full$age)
+  expect_true(full$coffee)
   expect_false(capped$age_coffee)
-  expect_false(grepl("mean_reaction", power_env$pp_formula_text(full, TRUE)))
+  expect_false(
+    grepl("mean_reaction", power_env$pp_formula_text(full, TRUE), fixed = TRUE)
+  )
 })
 
 test_that("single-measurement estimates and CIs agree with ordinary lm", {
@@ -145,7 +151,7 @@ test_that("single-measurement estimates and CIs agree with ordinary lm", {
     V <- stats::vcov(reference)[columns, columns, drop = FALSE]
     estimate <- as.numeric(crossprod(contrast, beta))
     se <- sqrt(as.numeric(crossprod(contrast, V %*% contrast)))
-    critical <- stats::qt(.975, stats::df.residual(reference))
+    critical <- stats::qt(0.975, stats::df.residual(reference))
     expect_equal(actual$estimate, estimate, tolerance = 1e-8)
     expect_equal(actual$se, se, tolerance = 1e-8)
     expect_equal(actual$lower, estimate - critical * se, tolerance = 1e-8)
@@ -163,7 +169,9 @@ test_that("the focal contrast remains caffeine minus decaf at 7 hours", {
   other <- first
   other$drink <- 1
   X <- power_env$pp_design(data, full)
-  difference <- as.vector(power_env$pp_design(other, full) - power_env$pp_design(first, full))
+  difference <- as.vector(
+    power_env$pp_design(other, full) - power_env$pp_design(first, full)
+  )
   expect_equal(difference, unname(power_env$pp_contrast(X)))
 })
 
@@ -174,7 +182,7 @@ test_that("grouped REML equals the full observation-level restricted likelihood"
   X <- power_env$pp_design(d$people, spec)
   Xlong <- X[d$group, , drop = FALSE]
   ZZ <- outer(d$group, d$group, "==") * 1
-  for (theta in c(0, .3, 1.2, 3)) {
+  for (theta in c(0, 0.3, 1.2, 3)) {
     V0 <- diag(length(d$y)) + expm1(theta) * ZZ
     V0X <- solve(V0, Xlong)
     information <- crossprod(Xlong, V0X)
@@ -185,10 +193,21 @@ test_that("grouped REML equals the full observation-level restricted likelihood"
     expected <- df * log(sigma2) +
       as.numeric(determinant(V0, logarithm = TRUE)$modulus) +
       as.numeric(determinant(information, logarithm = TRUE)$modulus)
-    actual <- power_env$pp_profile_reml(theta, X, d$counts, d$means, d$ss_within, TRUE)
+    actual <- power_env$pp_profile_reml(
+      theta,
+      X,
+      d$counts,
+      d$means,
+      d$ss_within,
+      TRUE
+    )
     expect_equal(actual$objective, expected, tolerance = 1e-8)
     expect_equal(unname(actual$beta), as.vector(beta), tolerance = 1e-8)
-    expect_equal(unname(actual$vcov), unname(sigma2 * solve(information)), tolerance = 1e-8)
+    expect_equal(
+      unname(actual$vcov),
+      unname(sigma2 * solve(information)),
+      tolerance = 1e-8
+    )
   }
 })
 
@@ -204,12 +223,13 @@ test_that("unequal-repeat estimates and random effects agree with dense GLS", {
   VinvX <- solve(V, Xlong)
   covariance <- solve(crossprod(Xlong, VinvX))
   beta <- covariance %*% crossprod(VinvX, d$y)
-  expect_true(result$random && result$valid)
+  expect_true(result$random)
+  expect_true(result$valid)
   expect_equal(unname(result$beta), as.vector(beta), tolerance = 1e-7)
   expect_equal(unname(result$vcov), unname(covariance), tolerance = 1e-7)
   raw_offsets <- d$means - as.vector(X %*% result$beta)
   expect_true(all(abs(result$person_effects) <= abs(raw_offsets) + 1e-8))
-  expect_equal(length(result$residuals), nrow(data))
+  expect_length(result$residuals, nrow(data))
   expect_gt(result$df, 1)
   expect_lt(result$df, nrow(data) - result$rank)
   shuffled <- data[rev(seq_len(nrow(data))), ]
@@ -220,8 +240,17 @@ test_that("unequal-repeat estimates and random effects agree with dense GLS", {
 
 test_that("balanced-interior Satterthwaite df recover the person-level df", {
   people <- power_env$pp_make_study(811)$people
-  X <- power_env$pp_design(people, power_env$pp_spec(drink_sleep = TRUE, age_coffee = TRUE))
-  df <- power_env$pp_contrast_df(X, rep(3L, nrow(people)), 625, 400, power_env$pp_contrast(X))
+  X <- power_env$pp_design(
+    people,
+    power_env$pp_spec(drink_sleep = TRUE, age_coffee = TRUE)
+  )
+  df <- power_env$pp_contrast_df(
+    X,
+    rep(3L, nrow(people)),
+    625,
+    400,
+    power_env$pp_contrast(X)
+  )
   expect_equal(df, nrow(people) - ncol(X), tolerance = 1e-7)
 })
 
@@ -231,7 +260,11 @@ test_that("invalid independence is not presented as legitimate power", {
   naive <- power_env$pp_fit_data(data, spec, FALSE)
   reference <- stats::lm(power_env$pp_formula(spec), data = data)
   expect_false(naive$valid)
-  expect_equal(naive$estimate, unname(stats::coef(reference)["drink"]), tolerance = 1e-8)
+  expect_equal(
+    naive$estimate,
+    unname(stats::coef(reference)["drink"]),
+    tolerance = 1e-8
+  )
   expect_equal(naive$se, unname(summary(reference)$coefficients["drink", "Std. Error"]),
                 tolerance = 1e-8)
   result <- power_env$pp_power(data, spec, FALSE)
@@ -244,12 +277,23 @@ test_that("power uses known simulation parameters, not the displayed outcomes", 
   changed <- data
   changed$reaction_time_ms <- data$reaction_time_ms * 10 + 100 * data$drink
   for (spec in power_all_specs()) {
-    expect_identical(power_env$pp_power(data, spec), power_env$pp_power(changed, spec))
-    expect_equal(power_env$pp_power(data, spec, drink_effect = 0)$power, .05, tolerance = 1e-10)
+    expect_identical(
+      power_env$pp_power(data, spec),
+      power_env$pp_power(changed, spec)
+    )
+    expect_equal(
+      power_env$pp_power(data, spec, drink_effect = 0)$power,
+      0.05,
+      tolerance = 1e-10
+    )
   }
   useful <- power_env$pp_power(data, power_env$pp_spec(sleep = TRUE))
-  full <- power_env$pp_power(data, power_env$pp_spec(drink_sleep = TRUE, age_coffee = TRUE))
-  expect_true(useful$power >= 0 && useful$power <= 1)
+  full <- power_env$pp_power(
+    data,
+    power_env$pp_spec(drink_sleep = TRUE, age_coffee = TRUE)
+  )
+  expect_gte(useful$power, 0)
+  expect_lte(useful$power, 1)
   expect_lt(full$power, useful$power)
   a <- power_env$pp_fit_data(data, power_env$pp_spec(sleep = TRUE))
   b <- power_env$pp_fit_data(changed, power_env$pp_spec(sleep = TRUE))
@@ -273,10 +317,10 @@ test_that("plot axes, facets and point sizes follow selected variables", {
   lines <- power_env$pp_prediction_grid(data, full_spec, fit)
   expected <- as.vector(power_env$pp_design(lines, full_spec) %*% fit$beta)
   expect_equal(lines$fitted, expected)
-  expect_equal(length(unique(lines$age_group)), 3L)
-  expect_equal(length(unique(lines$assigned_drink)), 2L)
+  expect_length(unique(lines$age_group), 3L)
+  expect_length(unique(lines$assigned_drink), 2L)
   points <- power_env$pp_plot_points(data, full_spec)
-  expect_equal(points$plot_x, data$hours_slept)
+  expect_identical(points$plot_x, data$hours_slept)
 })
 
 test_that("invalid inputs fail explicitly while unbalanced counts are accepted", {
@@ -323,9 +367,11 @@ test_that("the sidebar holds controls while the main area stays data-first", {
   expect_lt(position("model_formula"), position("power_plot"))
   expect_lt(position("model_formula"), position("precision_plot"))
   for (id in c("simulation_note", "sample_estimate", "nsim", "effect", "detail_tab")) {
-    expect_equal(position(id), -1L)
+    expect_identical(position(id), -1L)
   }
-  expect_false(grepl("attempt|Usual coffee consumption|tagline|Simulation settings", html))
+  expect_false(
+    grepl("attempt|Usual coffee consumption|tagline|Simulation settings", html)
+  )
   expect_match(sidebar, "Cups of coffee per day", fixed = TRUE)
 })
 
@@ -336,27 +382,35 @@ test_that("Shiny preserves the sample, fixes baseline colors, and exposes actual
       interaction_one = FALSE, interaction_two = FALSE,
       repeated = FALSE, account_person = TRUE, new_sample = 0)
     original <- long_data()
-    expect_equal(nrow(comparison_data()), 1L)
+    expect_identical(nrow(comparison_data()), 1L)
     expect_identical(comparison_data()$role, "baseline")
-    expect_equal(comparison_data()$lower, baseline_fit()$lower)
+    expect_identical(comparison_data()$lower, baseline_fit()$lower)
     expect_identical(data_view()$x, "drink")
 
-    session$setInputs(include_sleep = TRUE, include_age = TRUE, include_coffee = TRUE)
+    session$setInputs(
+      include_sleep = TRUE,
+      include_age = TRUE,
+      include_coffee = TRUE
+    )
     expect_identical(long_data(), original)
     expect_identical(comparison_data()$role, c("baseline", "current"))
     expect_identical(data_view()$x, "hours_slept")
     expect_true(data_view()$facet)
     expect_identical(data_view()$size, "daily_coffee_cups")
-    expect_equal(comparison_data()$lower[2], current_fit()$lower)
-    expect_equal(comparison_data()$upper[2], current_fit()$upper)
+    expect_identical(comparison_data()$lower[2], current_fit()$lower)
+    expect_identical(comparison_data()$upper[2], current_fit()$upper)
     expect_no_error(output$data_plot)
     expect_no_error(output$power_plot)
     expect_no_error(output$precision_plot)
 
-    session$setInputs(repeated = TRUE, interaction_one = TRUE, interaction_two = TRUE)
+    session$setInputs(
+      repeated = TRUE,
+      interaction_one = TRUE,
+      interaction_two = TRUE
+    )
     expect_true(all(table(long_data()$person) %in% 1:5))
     expect_true(current_fit()$random)
-    expect_equal(current_fit()$n_people, 42L)
+    expect_identical(current_fit()$n_people, 42L)
     expect_match(output$model_formula, "(1 | person)", fixed = TRUE)
     expect_false(grepl("mean_reaction|attempt", output$model_formula))
     expect_no_error(output$data_plot)
@@ -365,7 +419,11 @@ test_that("Shiny preserves the sample, fixes baseline colors, and exposes actual
     session$setInputs(account_person = FALSE)
     expect_true(is.na(comparison_data()$power[2]))
     expect_false(current_fit()$valid)
-    expect_match(output$validity_warning$html, "invalid confidence interval", fixed = TRUE)
+    expect_match(
+      output$validity_warning$html,
+      "invalid confidence interval",
+      fixed = TRUE
+    )
     expect_no_error(output$power_plot)
     session$setInputs(account_person = TRUE)
 
@@ -387,24 +445,27 @@ test_that("mixed-model intervals have reasonable seeded calibration", {
   spec <- power_env$pp_spec(drink_sleep = TRUE, age_coffee = TRUE)
   covered <- detected <- planned <- numeric(600)
   for (i in seq_along(covered)) {
-    data <- power_env$pp_sample_data(power_env$pp_make_study(20262000L + i), TRUE)
+    data <- power_env$pp_sample_data(
+      power_env$pp_make_study(20262000L + i),
+      TRUE
+    )
     result <- power_env$pp_fit_data(data, spec)
     effect <- power_env$pp_defaults$drink_effect
     covered[i] <- result$lower <= effect && result$upper >= effect
     detected[i] <- result$lower > 0 || result$upper < 0
     planned[i] <- power_env$pp_power(data, spec)$power
   }
-  expect_lt(abs(mean(covered) - .95), .04)
-  expect_lt(abs(mean(detected) - mean(planned)), .08)
+  expect_lt(abs(mean(covered) - 0.95), 0.04)
+  expect_lt(abs(mean(detected) - mean(planned)), 0.08)
 })
 
 test_that("sample sizes are balanced and nested across the entire slider", {
-  expect_equal(power_env$pp_defaults$min_people, 12L)
-  expect_equal(power_env$pp_defaults$n_people, 42L)
-  expect_equal(power_env$pp_defaults$max_people, 180L)
-  expect_equal(power_env$pp_defaults$people_step, 6L)
+  expect_identical(power_env$pp_defaults$min_people, 12L)
+  expect_identical(power_env$pp_defaults$n_people, 42L)
+  expect_identical(power_env$pp_defaults$max_people, 180L)
+  expect_identical(power_env$pp_defaults$people_step, 6L)
   allowed <- seq(12L, 180L, by = 6L)
-  expect_equal(length(allowed), 29L)
+  expect_length(allowed, 29L)
   expect_true(all(allowed %% 6L == 0L))
   for (seed in c(20261016L, 811L, 1800L)) {
     pool <- power_env$pp_make_study(seed, 180L)
@@ -412,7 +473,10 @@ test_that("sample sizes are balanced and nested across the entire slider", {
       small <- power_env$pp_make_study(seed, n)
       expect_identical(small$people, pool$people[seq_len(n), , drop = FALSE])
       expect_identical(small$person_z, pool$person_z[seq_len(n)])
-      expect_identical(small$measurement_z, pool$measurement_z[seq_len(n), , drop = FALSE])
+      expect_identical(
+        small$measurement_z,
+        pool$measurement_z[seq_len(n), , drop = FALSE]
+      )
       expect_equal(as.integer(table(small$people$drink)), rep(n / 2, 2))
       expect_equal(as.integer(table(small$people$age_group)), rep(n / 3, 3))
       expect_equal(as.integer(table(small$people$age_group, small$people$drink)),
@@ -435,11 +499,14 @@ test_that("all permitted models work at both slider limits", {
       for (spec in power_all_specs()) {
         fit <- power_env$pp_fit_data(data, spec)
         planned <- power_env$pp_power(data, spec)
-        expect_equal(fit$n_people, n)
-        expect_true(all(is.finite(c(fit$estimate, fit$lower, fit$upper, fit$df))))
+        expect_identical(fit$n_people, n)
+        expect_true(
+          all(is.finite(c(fit$estimate, fit$lower, fit$upper, fit$df)))
+        )
         expect_gt(fit$width, 0)
         expect_gt(fit$df, 0)
-        expect_true(planned$power >= 0 && planned$power <= 1)
+        expect_gte(planned$power, 0)
+        expect_lte(planned$power, 1)
         expect_no_error(power_env$pp_prediction_grid(data, spec, fit))
       }
     }
@@ -448,13 +515,16 @@ test_that("all permitted models work at both slider limits", {
 
 test_that("status colours obey the power threshold and interval-width rules", {
   p <- power_env$pp_power_status
-  expect_identical(p(.81, .95), "strong") # Absolute 80% rule takes precedence.
-  expect_identical(p(.80, .5), "better")
-  expect_identical(p(.7, .5), "better")
-  expect_identical(p(.4, .5), "worse")
-  expect_identical(p(.5, .5), "same")
-  expect_identical(p(NA_real_, .5), "invalid")
-  expect_identical(p(.95, .5, valid = FALSE), "invalid")
+  expect_identical(
+    p(0.81, 0.95),
+    "strong"
+  ) # Absolute 80% rule takes precedence.
+  expect_identical(p(0.80, 0.5), "better")
+  expect_identical(p(0.7, 0.5), "better")
+  expect_identical(p(0.4, 0.5), "worse")
+  expect_identical(p(0.5, 0.5), "same")
+  expect_identical(p(NA_real_, 0.5), "invalid")
+  expect_identical(p(0.95, 0.5, valid = FALSE), "invalid")
   w <- power_env$pp_precision_status
   expect_identical(w(30, 40), "strong")
   expect_identical(w(32, 40), "strong")
@@ -466,19 +536,21 @@ test_that("status colours obey the power threshold and interval-width rules", {
   expect_identical(unname(app$pp_drink_colors["Caffeinated coffee"]), "#8C510A")
   expect_false(any(app$pp_drink_colors == app$pp_plot_colors["baseline"]))
   expect_identical(unname(app$pp_plot_colors["baseline"]), "#9A9FA6")
-  expect_false(identical(app$pp_plot_colors["strong"], app$pp_plot_colors["better"]))
+  expect_false(
+    identical(app$pp_plot_colors["strong"], app$pp_plot_colors["better"])
+  )
 })
 
 test_that("feedback distinguishes low power, uncertainty and evidence of an effect", {
   p <- power_env$pp_power_feedback
-  expect_match(p(.7, .5), "higher.*below 80%")
-  expect_match(p(.7, .5), "30.0%", fixed = TRUE)
-  expect_match(p(.4, .5), "lower.*below 80%")
-  expect_match(p(.9, .5), "above 80%")
-  expect_match(p(.9, .95), "lower.*above 80%")
-  expect_match(p(.8, .5), "at 80%")
-  expect_match(p(1, .5), "less than 0.1%", fixed = TRUE)
-  expect_match(p(NA_real_, .5, valid = FALSE), "not independent", fixed = TRUE)
+  expect_match(p(0.7, 0.5), "higher.*below 80%")
+  expect_match(p(0.7, 0.5), "30.0%", fixed = TRUE)
+  expect_match(p(0.4, 0.5), "lower.*below 80%")
+  expect_match(p(0.9, 0.5), "above 80%")
+  expect_match(p(0.9, 0.95), "lower.*above 80%")
+  expect_match(p(0.8, 0.5), "at 80%")
+  expect_match(p(1, 0.5), "less than 0.1%", fixed = TRUE)
+  expect_match(p(NA_real_, 0.5, valid = FALSE), "not independent", fixed = TRUE)
   w <- power_env$pp_precision_feedback
   expect_match(w(30, 40, -20, 10), "narrower.*more precise.*includes 0")
   expect_match(w(50, 40, -60, -10), "wider.*less precise.*excludes 0")
@@ -487,7 +559,7 @@ test_that("feedback distinguishes low power, uncertainty and evidence of an effe
   expect_match(w(40, 40, 1, 41), "excludes 0")
   expect_match(w(10, 40, -30, -20, valid = FALSE), "Do not use", fixed = TRUE)
   # Do not recreate the long instructional panels removed in v02.
-  for (text in c(p(.7, .5), p(.4, .5), p(.9, .95),
+  for (text in c(p(0.7, 0.5), p(0.4, 0.5), p(0.9, 0.95),
                  w(30, 40, -20, 10), w(50, 40, -60, -10))) {
     expect_lte(length(strsplit(text, "\\s+")[[1]]), 34L)
   }
@@ -507,11 +579,11 @@ test_that("the stronger scenario changes generating parameters, not the power fo
   reference <- stats::power.t.test(n = 21, delta = 25,
     sd = sqrt(residual_sd^2 + (power_env$pp_defaults$sleep_effect *
                                power_env$pp_defaults$sleep_sd)^2),
-    sig.level = .05, type = "two.sample", strict = TRUE)
+    sig.level = 0.05, type = "two.sample", strict = TRUE)
   expect_equal(baseline$power, reference$power, tolerance = 1e-8)
-  expect_lt(baseline$power, .6)
-  expect_gt(sleep$power, .8)
-  expect_gt(sleep$power - baseline$power, .3)
+  expect_lt(baseline$power, 0.6)
+  expect_gt(sleep$power, 0.8)
+  expect_gt(sleep$power - baseline$power, 0.3)
   expect_equal(sleep$se, residual_sd * sqrt(1 / 21 + 1 / 21), tolerance = 1e-8)
 })
 
@@ -537,13 +609,13 @@ test_that("the slider and short feedback update without replacing existing peopl
     expect_no_error(output$power_feedback)
     expect_no_error(output$precision_feedback)
     session$setInputs(n_people = 12)
-    expect_equal(nrow(long_data()), 12L)
-    expect_equal(as.integer(table(long_data()$drink)), c(6L, 6L))
-    expect_equal(as.integer(table(long_data()$age_group)), c(4L, 4L, 4L))
+    expect_identical(nrow(long_data()), 12L)
+    expect_identical(as.integer(table(long_data()$drink)), c(6L, 6L))
+    expect_identical(as.integer(table(long_data()$age_group)), c(4L, 4L, 4L))
     expect_identical(long_data(), original[seq_len(12), , drop = FALSE])
     expect_match(output$study_note, "12 people: 6 receive", fixed = TRUE)
     session$setInputs(n_people = 180)
-    expect_equal(nrow(long_data()), 180L)
+    expect_identical(nrow(long_data()), 180L)
     expect_identical(long_data()[seq_len(42), , drop = FALSE], original)
     session$setInputs(n_people = 42)
     expect_identical(long_data(), original)
@@ -563,8 +635,12 @@ test_that("the slider and short feedback update without replacing existing peopl
     expect_no_error(output$precision_plot)
     for (n in c(12L, 180L)) {
       session$setInputs(n_people = n, repeated = TRUE)
-      expect_equal(length(unique(long_data()$person)), n)
-      expect_match(output$data_note, paste0("from ", n, " people"), fixed = TRUE)
+      expect_length(unique(long_data()$person), n)
+      expect_match(
+        output$data_note,
+        paste0("from ", n, " people"),
+        fixed = TRUE
+      )
       expect_true(current_fit()$valid)
       expect_no_error(output$data_plot)
       expect_no_error(output$power_feedback)
@@ -597,7 +673,11 @@ test_that("the sidebar title, description and caution retain the requested wordi
   expect_match(html, paste0("<strong>",
     "A sample size that gives good power here does not guarantee good power for your data.",
     "</strong>"), fixed = TRUE)
-  expect_match(html, "Do not use these sample sizes as recommendations for your study.", fixed = TRUE)
+  expect_match(
+    html,
+    "Do not use these sample sizes as recommendations for your study.",
+    fixed = TRUE
+  )
   expect_lt(locate('id="include_age"'), locate('id="include_coffee"'))
   expect_lt(locate('id="include_coffee"'), locate('id="include_sleep"'))
   expect_match(html, "Adjust sample size", fixed = TRUE)
@@ -622,7 +702,9 @@ test_that("the precision axis has equal positive and negative extents and ticks"
 
 test_that("the CI reference line is labelled directly and cannot obscure its values", {
   app <- power_load_app()
-  expect_false(app$pp_reference_color %in% c(app$pp_drink_colors, app$pp_plot_colors))
+  expect_false(
+    app$pp_reference_color %in% c(app$pp_drink_colors, app$pp_plot_colors)
+  )
   reference_rgb <- as.integer(grDevices::col2rgb(app$pp_reference_color))
   expect_gt(length(unique(reference_rgb)), 1L) # The reference is not grey.
 
@@ -669,9 +751,9 @@ test_that("the CI reference line is labelled directly and cannot obscure its val
       direct_index <- layer_index("GeomText")
       expect_length(direct_index, 1L)
       direct <- built$data[[direct_index]]
-      expect_equal(direct$label,
+      expect_identical(direct$label,
         sprintf("True effect (%g ms)", app$pp_defaults$drink_effect))
-      expect_equal(direct$colour, app$pp_reference_color)
+      expect_identical(direct$colour, app$pp_reference_color)
       expect_gt(direct$x, app$pp_defaults$drink_effect)
       expect_lt(direct$x, xscale$limits[2])
 
@@ -679,7 +761,7 @@ test_that("the CI reference line is labelled directly and cannot obscure its val
       expect_length(value_index, 1L)
       values <- built$data[[value_index]]
       comparison <- comparison_data()
-      expect_equal(values$label, sprintf("%+.1f  [%+.1f, %+.1f]",
+      expect_identical(values$label, sprintf("%+.1f  [%+.1f, %+.1f]",
         comparison$estimate, comparison$lower, comparison$upper))
       expect_equal(values$x, (comparison$lower + comparison$upper) / 2)
       expect_equal(values$y, comparison$position + 0.25)
@@ -687,7 +769,10 @@ test_that("the CI reference line is labelled directly and cannot obscure its val
       expect_true(all(values$colour == "black"))
       expect_true(all(is.na(values$alpha) | values$alpha == 1))
       expect_gt(value_index, reference_index) # Opaque labels are drawn on top.
-      expect_gt(direct$y, max(values$y)) # The true-effect label has its own row.
+      expect_gt(
+        direct$y,
+        max(values$y)
+      ) # The true-effect label has its own row.
       expect_lt(direct$y, figure$scales$get_scales("y")$limits[2])
       value_layer <- figure$layers[[value_index]]
       if ("border.colour" %in% names(formals(ggplot2::geom_label))) {
@@ -709,10 +794,10 @@ test_that("the default design exposes a substantial cost of unnecessary interact
   full <- power_env$pp_power(data,
     power_env$pp_spec(drink_sleep = TRUE, age_coffee = TRUE))$power
   expect_lt(split, baseline)
-  expect_gt(useful - baseline, .3)
-  expect_gt(useful, .75)
-  expect_lt(useful, .85)
-  expect_gt(useful - full, .3)
+  expect_gt(useful - baseline, 0.3)
+  expect_gt(useful, 0.75)
+  expect_lt(useful, 0.85)
+  expect_gt(useful - full, 0.3)
   expect_lt(full, baseline)
   # The data and their RNG stream are not regenerated when a model changes.
   expect_identical(data, power_env$pp_sample_data(power_env$pp_make_study()))
@@ -736,11 +821,14 @@ test_that("every slider setting plots every point in the correct age and drink g
         session$setInputs(n_people = n, repeated = with_repeats)
         plotted <- plot_points()
         raw <- long_data()
-        expect_equal(nrow(plotted), nrow(raw))
+        expect_identical(nrow(plotted), nrow(raw))
         expect_identical(plotted$person, raw$person)
         expect_identical(plotted$reaction_time_ms, raw$reaction_time_ms)
         people <- plotted[!duplicated(plotted$person), , drop = FALSE]
-        expect_equal(as.integer(table(people$age_group, people$drink)), rep(n / 6, 6))
+        expect_equal(
+          as.integer(table(people$age_group, people$drink)),
+          rep(n / 6, 6)
+        )
 
         figure <- data_figure()
         point_index <- which(vapply(figure$layers, function(layer) {
@@ -749,7 +837,7 @@ test_that("every slider setting plots every point in the correct age and drink g
         expect_length(point_index, 1L)
         built <- power_with_null_device(ggplot2::ggplot_build(figure))
         drawn <- built$data[[point_index]]
-        expect_equal(nrow(drawn), nrow(raw))
+        expect_identical(nrow(drawn), nrow(raw))
         expect_false(anyNA(drawn[, c("x", "y", "colour", "PANEL")]))
         panels <- built$layout$layout
         for (i in seq_len(nrow(panels))) {
@@ -764,13 +852,19 @@ test_that("every slider setting plots every point in the correct age and drink g
       }
     }
     # Also check the age-faceted categorical x-axis at the two limits.
-    session$setInputs(repeated = FALSE, include_sleep = FALSE, include_coffee = FALSE)
+    session$setInputs(
+      repeated = FALSE,
+      include_sleep = FALSE,
+      include_coffee = FALSE
+    )
     for (n in c(12L, 180L)) {
       session$setInputs(n_people = n)
       plotted <- plot_points()
       expect_true(all(plotted$plot_x > 0.5 & plotted$plot_x < 2.5))
-      expect_equal(nrow(plotted), n)
-      expect_no_error(power_with_null_device(ggplot2::ggplotGrob(data_figure())))
+      expect_identical(nrow(plotted), n)
+      expect_no_error(
+        power_with_null_device(ggplot2::ggplotGrob(data_figure()))
+      )
     }
   })
 })

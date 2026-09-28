@@ -16,10 +16,10 @@ test_that("sums_squares simulation has the expected group structure", {
   data <- app_env$simulate_sums_squares_data(seed = 20260710)
 
   expect_s3_class(data, "data.frame")
-  expect_equal(nrow(data), 10L)
-  expect_equal(levels(data$group), c("A", "B", "C"))
-  expect_equal(unname(as.integer(table(data$group))), c(4L, 3L, 3L))
-  expect_equal(data$id, seq_len(nrow(data)))
+  expect_identical(nrow(data), 10L)
+  expect_identical(levels(data$group), c("A", "B", "C"))
+  expect_identical(unname(as.integer(table(data$group))), c(4L, 3L, 3L))
+  expect_identical(data$id, seq_len(nrow(data)))
 
   expect_true(all(c("group", "y", "id", "x_group", "x") %in% names(data)))
   expect_true(all(is.finite(data$y)))
@@ -33,8 +33,93 @@ test_that("sums_squares simulation is reproducible by seed", {
   data_2 <- app_env$simulate_sums_squares_data(seed = 20260710)
   data_3 <- app_env$simulate_sums_squares_data(seed = 20260711)
 
-  expect_equal(data_1, data_2)
+  expect_identical(data_1, data_2)
   expect_false(isTRUE(all.equal(data_1$y, data_3$y)))
+})
+
+test_that("sums_squares preserves seed state on success and errors", {
+  app_env <- source_app_env("sums_squares")
+
+  local({
+    had_seed <- exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+    if (had_seed) {
+      saved_seed <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+    }
+    on.exit({
+      if (had_seed) {
+        assign(".Random.seed", saved_seed, envir = .GlobalEnv)
+      } else if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+        rm(".Random.seed", envir = .GlobalEnv)
+      }
+    }, add = TRUE)
+
+    original_positions <- app_env$add_plot_positions
+    for (seed_exists in c(TRUE, FALSE)) {
+      for (fail in c(FALSE, TRUE)) {
+        if (seed_exists) {
+          set.seed(12345)
+          before <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+        } else if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+          rm(".Random.seed", envir = .GlobalEnv)
+        }
+
+        if (fail) {
+          # Fail after random draws, not before the generator changes state.
+          app_env$add_plot_positions <- function(data) {
+            stop("test simulation error", call. = FALSE)
+          }
+          expect_error(
+            app_env$simulate_sums_squares_data(20260710),
+            "test simulation error",
+            fixed = TRUE
+          )
+        } else {
+          app_env$add_plot_positions <- original_positions
+          expect_no_error(app_env$simulate_sums_squares_data(20260710))
+        }
+
+        expect_identical(
+          exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE),
+          seed_exists
+        )
+        if (seed_exists) {
+          expect_identical(
+            get(".Random.seed", envir = .GlobalEnv, inherits = FALSE),
+            before
+          )
+        }
+      }
+    }
+  })
+})
+
+test_that("sums_squares retains the established simulated values", {
+  app_env <- source_app_env("sums_squares")
+
+  local({
+    had_seed <- exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+    if (had_seed) {
+      saved_seed <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+    }
+    on.exit({
+      if (had_seed) {
+        assign(".Random.seed", saved_seed, envir = .GlobalEnv)
+      } else if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+        rm(".Random.seed", envir = .GlobalEnv)
+      }
+    }, add = TRUE)
+
+    for (seed in c(20260710, 20260711, 123)) {
+      actual <- app_env$simulate_sums_squares_data(seed)
+      set.seed(seed)
+      expected <- c(
+        stats::rnorm(4, mean = 8, sd = 1.5),
+        stats::rnorm(3, mean = 12, sd = 1.8),
+        stats::rnorm(3, mean = 18, sd = 1.6)
+      )
+      expect_identical(actual$y, expected)
+    }
+  })
 })
 
 test_that("sums_squares decomposition is internally consistent", {
@@ -79,8 +164,8 @@ test_that("sums_squares square data are well formed", {
   square_data <- app_env$make_square_data(summary_object)
 
   expect_s3_class(square_data, "data.frame")
-  expect_equal(nrow(square_data), 3L * nrow(data))
-  expect_equal(levels(square_data$component), c("Total", "Groups", "Error"))
+  expect_identical(nrow(square_data), 3L * nrow(data))
+  expect_identical(levels(square_data$component), c("Total", "Groups", "Error"))
 
   expect_true(all(square_data$ymin <= square_data$ymax))
   expect_true(all(square_data$xmin <= square_data$xmax))
@@ -94,7 +179,7 @@ test_that("sums_squares square data are well formed", {
 test_that("sums_squares step helpers work for all defined steps", {
   app_env <- source_app_env("sums_squares")
 
-  expect_equal(app_env$max_step, 6)
+  expect_identical(app_env$max_step, 6)
 
   expect_no_error(
     vapply(0:app_env$max_step, app_env$step_title, character(1))

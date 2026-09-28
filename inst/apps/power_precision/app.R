@@ -7,7 +7,11 @@ pp_source_dir <- tryCatch({
     if (is.null(path) || !length(path)) "" else as.character(path[[1]])
   }, character(1))
   files <- files[nzchar(files)]
-  if (!length(files)) character(0) else dirname(normalizePath(tail(files, 1)))
+  if (length(files)) {
+    dirname(normalizePath(tail(files, 1)))
+  } else {
+    character(0)
+  }
 }, error = function(e) character(0))
 pp_app_candidates <- unique(c(
   pp_source_dir, getwd(),
@@ -18,7 +22,10 @@ pp_app_directory <- pp_app_candidates[
   file.exists(file.path(pp_app_candidates, "helpers.R"))
 ][1]
 if (is.na(pp_app_directory)) {
-  stop("Could not find the power_precision app's helpers.R file.", call. = FALSE)
+  stop(
+    "Could not find the power_precision app's helpers.R file.",
+    call. = FALSE
+  )
 }
 source(file.path(pp_app_directory, "helpers.R"), local = TRUE)
 
@@ -49,7 +56,10 @@ ui <- shiny::fluidPage(
       shiny::sidebarLayout(
         shiny::sidebarPanel(width = 3,
           shiny::div(class = "pp-sidebar",
-            shiny::tags$h1(class = "app-title", "Sample size, effect size and power"),
+            shiny::tags$h1(
+              class = "app-title",
+              "Sample size, effect size and power"
+            ),
             shiny::tags$p(class = "pp-intro",
               "This demonstration shows how sample size and model choices affect statistical power and precision for a known effect size."
             ),
@@ -58,7 +68,11 @@ ui <- shiny::fluidPage(
                 shiny::tags$h2("Add variables to the model"),
                 shiny::div(class = "pp-checkbox-row",
                   shiny::checkboxInput("include_age", "Age group", FALSE),
-                  shiny::checkboxInput("include_coffee", "Cups of coffee per day", FALSE),
+                  shiny::checkboxInput(
+                    "include_coffee",
+                    "Cups of coffee per day",
+                    FALSE
+                  ),
                   shiny::checkboxInput("include_sleep", "Hours slept", FALSE)
                 ),
                 if (pp_defaults$max_interactions >= 1L) shiny::conditionalPanel(
@@ -67,20 +81,36 @@ ui <- shiny::fluidPage(
                   } else "input.include_sleep",
                   shiny::div(class = "pp-checkbox-row pp-interactions",
                     shiny::conditionalPanel("input.include_sleep",
-                      shiny::checkboxInput("interaction_one", "Drink x hours slept", FALSE)
+                      shiny::checkboxInput(
+                        "interaction_one",
+                        "Drink x hours slept",
+                        FALSE
+                      )
                     ),
                     if (pp_defaults$max_interactions >= 2L) shiny::conditionalPanel(
                       "input.include_age && input.include_coffee",
-                      shiny::checkboxInput("interaction_two", "Age group x daily coffee cups", FALSE)
+                      shiny::checkboxInput(
+                        "interaction_two",
+                        "Age group x daily coffee cups",
+                        FALSE
+                      )
                     )
                   )
                 ),
                 shiny::tags$details(class = "pp-repeats",
                   shiny::tags$summary("Repeated measurements"),
                   shiny::div(class = "pp-checkbox-row",
-                    shiny::checkboxInput("repeated", "1-5 measurements per person", FALSE),
+                    shiny::checkboxInput(
+                      "repeated",
+                      "1-5 measurements per person",
+                      FALSE
+                    ),
                     shiny::conditionalPanel("input.repeated",
-                      shiny::checkboxInput("account_person", "Random intercept for person", TRUE)
+                      shiny::checkboxInput(
+                        "account_person",
+                        "Random intercept for person",
+                        TRUE
+                      )
                     )
                   )
                 )
@@ -92,7 +122,9 @@ ui <- shiny::fluidPage(
                   value = pp_defaults$n_people, step = pp_defaults$people_step,
                   width = "100%"
                 ),
-                shiny::tags$p(shiny::textOutput("allocation_note", inline = TRUE))
+                shiny::tags$p(
+                  shiny::textOutput("allocation_note", inline = TRUE)
+                )
               )
             ),
             shiny::tags$p(class = "pp-caution",
@@ -118,14 +150,18 @@ ui <- shiny::fluidPage(
               shiny::actionButton("new_sample", "New sample")
             ),
             shiny::div(class = "pp-model",
-              shiny::tags$pre(shiny::textOutput("model_formula", inline = TRUE)),
+              shiny::tags$pre(
+                shiny::textOutput("model_formula", inline = TRUE)
+              ),
               shiny::uiOutput("model_note")
             ),
             shiny::div(class = "pp-results",
               shiny::uiOutput("validity_warning"),
               shiny::div(class = "pp-results-grid",
                 shiny::div(class = "pp-result",
-                  shiny::tags$h2(shiny::textOutput("power_title", inline = TRUE)),
+                  shiny::tags$h2(
+                    shiny::textOutput("power_title", inline = TRUE)
+                  ),
                   shiny::plotOutput("power_plot", height = "220px"),
                   shiny::tags$p(class = "pp-feedback",
                     shiny::textOutput("power_feedback", inline = TRUE)
@@ -157,7 +193,8 @@ server <- function(input, output, session) {
     pp_spec(
       sleep = input$include_sleep, age = input$include_age,
       coffee = input$include_coffee,
-      drink_sleep = isTRUE(input$include_sleep) && isTRUE(input$interaction_one),
+      drink_sleep = isTRUE(input$include_sleep) &&
+        isTRUE(input$interaction_one),
       age_coffee = isTRUE(input$include_age) && isTRUE(input$include_coffee) &&
         isTRUE(input$interaction_two)
     )
@@ -171,7 +208,9 @@ server <- function(input, output, session) {
   })
   study <- shiny::reactive(pp_make_study(sample_seed(), n_people()))
   long_data <- shiny::reactive(pp_sample_data(study(), repeated()))
-  same_model <- shiny::reactive(identical(selected_spec(), pp_spec()) && account())
+  same_model <- shiny::reactive(
+    identical(selected_spec(), pp_spec()) && account()
+  )
   baseline_fit <- shiny::reactive(pp_fit_data(long_data(), pp_spec(), TRUE))
   current_fit <- shiny::reactive({
     if (same_model()) return(baseline_fit())
@@ -199,14 +238,19 @@ server <- function(input, output, session) {
 
   data_view <- shiny::reactive(pp_plot_view(selected_spec()))
   plot_points <- shiny::reactive(pp_plot_points(long_data(), selected_spec()))
-  plot_lines <- shiny::reactive(pp_prediction_grid(long_data(), selected_spec(), current_fit()))
+  plot_lines <- shiny::reactive(
+    pp_prediction_grid(long_data(), selected_spec(), current_fit())
+  )
 
   data_figure <- shiny::reactive({
     spec <- selected_spec()
     view <- data_view()
     data <- plot_points()
     lines <- plot_lines()
-    plot <- ggplot2::ggplot(data, ggplot2::aes(x = plot_x, y = reaction_time_ms))
+    plot <- ggplot2::ggplot(
+      data,
+      ggplot2::aes(x = plot_x, y = reaction_time_ms)
+    )
     if (repeated()) {
       plot <- plot + ggplot2::geom_line(
         ggplot2::aes(group = person), color = "grey70", linewidth = 0.6
@@ -214,7 +258,8 @@ server <- function(input, output, session) {
     }
     if (!is.null(view$size)) {
       plot <- plot + ggplot2::geom_point(
-        ggplot2::aes(color = assigned_drink, size = daily_coffee_cups), alpha = 0.8
+        ggplot2::aes(color = assigned_drink, size = daily_coffee_cups),
+        alpha = 0.8
       ) + ggplot2::scale_size_continuous(
         name = "Daily coffee (cups)", range = c(2.1, 4.4), limits = c(0, 4),
         breaks = c(0, 2, 4)
@@ -227,7 +272,12 @@ server <- function(input, output, session) {
     if (view$continuous) {
       plot <- plot + ggplot2::geom_line(
         data = lines,
-        ggplot2::aes(x = plot_x, y = fitted, color = assigned_drink, group = assigned_drink),
+        ggplot2::aes(
+          x = plot_x,
+          y = fitted,
+          color = assigned_drink,
+          group = assigned_drink
+        ),
         linewidth = 1.1, inherit.aes = FALSE
       ) + ggplot2::scale_x_continuous(name = view$x_label)
     } else {
@@ -309,7 +359,11 @@ server <- function(input, output, session) {
     data$power_status <- "baseline"
     data$precision_status <- "baseline"
     if (nrow(data) > 1L) {
-      data$power_status[2] <- pp_power_status(data$power[2], data$power[1], data$valid[2])
+      data$power_status[2] <- pp_power_status(
+        data$power[2],
+        data$power[1],
+        data$valid[2]
+      )
       data$precision_status[2] <- pp_precision_status(
         data$width[2], data$width[1], data$valid[2]
       )
@@ -331,9 +385,13 @@ server <- function(input, output, session) {
     data <- comparison_data()
     valid <- data[is.finite(data$power), , drop = FALSE]
     invalid <- data[!is.finite(data$power), , drop = FALSE]
-    plot <- ggplot2::ggplot(data, ggplot2::aes(y = position, color = power_status)) +
+    plot <- ggplot2::ggplot(
+      data,
+      ggplot2::aes(y = position, color = power_status)
+    ) +
       ggplot2::geom_vline(
-        xintercept = pp_defaults$target_power, linetype = "dashed", color = "grey65"
+        xintercept = pp_defaults$target_power,
+        linetype = "dashed", color = "grey65"
       ) +
       ggplot2::geom_segment(
         data = valid,
@@ -354,7 +412,8 @@ server <- function(input, output, session) {
     plot +
       ggplot2::scale_color_manual(values = pp_plot_colors) +
       ggplot2::scale_x_continuous(
-        limits = c(0, 1.17), breaks = c(0, 0.25, 0.5, pp_defaults$target_power, 1),
+        limits = c(0, 1.17),
+        breaks = c(0, 0.25, 0.5, pp_defaults$target_power, 1),
         labels = function(x) paste0(100 * x, "%"),
         expand = ggplot2::expansion(mult = c(0, 0))
       ) +
@@ -363,11 +422,17 @@ server <- function(input, output, session) {
         limits = c(0.45, max(data$position) + 0.6), expand = c(0, 0)
       ) +
       ggplot2::labs(
-        x = sprintf("Detecting a true %g ms difference", abs(pp_defaults$drink_effect)),
+        x = sprintf(
+          "Detecting a true %g ms difference",
+          abs(pp_defaults$drink_effect)
+        ),
         y = NULL
       ) + statsapps_plot_theme() +
-      ggplot2::theme(legend.position = "none", axis.text.y = ggplot2::element_text(size = 13),
-                     axis.title.x = ggplot2::element_text(size = 14))
+      ggplot2::theme(
+        legend.position = "none",
+        axis.text.y = ggplot2::element_text(size = 13),
+        axis.title.x = ggplot2::element_text(size = 14)
+      )
   })
 
   precision_figure <- shiny::reactive({
@@ -391,7 +456,10 @@ server <- function(input, output, session) {
       label.r = grid::unit(0, "lines"), show.legend = FALSE
     ), label_border))
 
-    ggplot2::ggplot(data, ggplot2::aes(y = position, color = precision_status)) +
+    ggplot2::ggplot(
+      data,
+      ggplot2::aes(y = position, color = precision_status)
+    ) +
       ggplot2::geom_vline(
         xintercept = pp_defaults$drink_effect, linetype = "dashed",
         color = pp_reference_color
@@ -400,11 +468,21 @@ server <- function(input, output, session) {
         ggplot2::aes(x = lower, xend = upper, yend = position), linewidth = 1.8
       ) +
       ggplot2::geom_segment(
-        ggplot2::aes(x = lower, xend = lower, y = position - 0.07, yend = position + 0.07),
+        ggplot2::aes(
+          x = lower,
+          xend = lower,
+          y = position - 0.07,
+          yend = position + 0.07
+        ),
         linewidth = 0.8
       ) +
       ggplot2::geom_segment(
-        ggplot2::aes(x = upper, xend = upper, y = position - 0.07, yend = position + 0.07),
+        ggplot2::aes(
+          x = upper,
+          xend = upper,
+          y = position - 0.07,
+          yend = position + 0.07
+        ),
         linewidth = 0.8
       ) +
       ggplot2::geom_point(ggplot2::aes(x = estimate), size = 3.5) +
@@ -429,7 +507,8 @@ server <- function(input, output, session) {
         subtitle = if (repeated()) "95% CI (approx.)" else "95% CI"
       ) + statsapps_plot_theme() +
       ggplot2::theme(
-        legend.position = "none", axis.text.y = ggplot2::element_text(size = 13),
+        legend.position = "none",
+        axis.text.y = ggplot2::element_text(size = 13),
         axis.title.x = ggplot2::element_text(size = 14),
         plot.subtitle = ggplot2::element_text(size = 13, color = "black")
       )
