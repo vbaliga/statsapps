@@ -2,6 +2,8 @@
 
 ## statsapps 0.2.0
 
+CRAN release: 2026-09-28
+
 *2026-09-27*
 
 - Introduce statistical power app
